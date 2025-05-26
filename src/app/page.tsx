@@ -456,105 +456,107 @@ export default function NewsroomTracker() {
     </div>
   )
 
-  const Button = ({ children, onClick, disabled, style, ...props }: any) => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        backgroundColor: disabled ? '#9ca3af' : '#2563eb',
-        color: 'white',
-        padding: '10px 16px',
-        borderRadius: '6px',
-        border: 'none',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        fontSize: '14px',
-        fontWeight: '500',
-        transition: 'background-color 0.2s',
-        ...style
-      }}
-      onMouseOver={(e: any) => {
-        if (!disabled) e.target.style.backgroundColor = '#1d4ed8'
-      }}
-      onMouseOut={(e: any) => {
-        if (!disabled) e.target.style.backgroundColor = '#2563eb'
-      }}
-      {...props}
-    >
-      {children}
-    </button>
-  )
+  // Dodajte ove komponente PRE glavne NewsroomTracker funkcije
 
-  const Card = ({ children, style }: any) => (
-    <div style={{
-      backgroundColor: 'white',
-      borderRadius: '8px',
-      border: '1px solid #e5e7eb',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+const Button = ({ children, onClick, disabled, style, ...props }: any) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    style={{
+      backgroundColor: disabled ? '#9ca3af' : '#2563eb',
+      color: 'white',
+      padding: '10px 16px',
+      borderRadius: '6px',
+      border: 'none',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      fontSize: '14px',
+      fontWeight: '500',
+      transition: 'background-color 0.2s',
       ...style
-    }}>
-      {children}
-    </div>
-  )
+    }}
+    onMouseOver={(e: any) => {
+      if (!disabled) e.target.style.backgroundColor = style?.backgroundColor === '#16a34a' ? '#15803d' : style?.backgroundColor === '#9333ea' ? '#7c3aed' : '#1d4ed8'
+    }}
+    onMouseOut={(e: any) => {
+      if (!disabled) e.target.style.backgroundColor = style?.backgroundColor === '#16a34a' ? '#16a34a' : style?.backgroundColor === '#9333ea' ? '#9333ea' : '#2563eb'
+    }}
+    {...props}
+  >
+    {children}
+  </button>
+)
 
-  const Input = ({ type = 'text', value, onChange, placeholder, style, ...props }: any) => (
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      style={{
-        width: '100%',
-        padding: '8px 12px',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        outline: 'none',
-        ...style
-      }}
-      {...props}
-    />
-  )
+const Card = ({ children, style }: any) => (
+  <div style={{
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    ...style
+  }}>
+    {children}
+  </div>
+)
 
-  const Select = ({ value, onChange, children, style, ...props }: any) => (
-    <select
-      value={value}
-      onChange={onChange}
-      style={{
-        width: '100%',
-        padding: '8px 12px',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        backgroundColor: 'white',
-        outline: 'none',
-        ...style
-      }}
-      {...props}
-    >
-      {children}
-    </select>
-  )
+const Input = ({ type = 'text', value, onChange, placeholder, style, ...props }: any) => (
+  <input
+    type={type}
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    style={{
+      width: '100%',
+      padding: '8px 12px',
+      border: '1px solid #d1d5db',
+      borderRadius: '6px',
+      fontSize: '14px',
+      outline: 'none',
+      ...style
+    }}
+    {...props}
+  />
+)
 
-  const Textarea = ({ value, onChange, placeholder, rows = 3, style, ...props }: any) => (
-    <textarea
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      rows={rows}
-      style={{
-        width: '100%',
-        padding: '8px 12px',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        outline: 'none',
-        resize: 'vertical',
-        fontFamily: 'inherit',
-        ...style
-      }}
-      {...props}
-    />
-  )
+const Select = ({ value, onChange, children, style, ...props }: any) => (
+  <select
+    value={value}
+    onChange={onChange}
+    style={{
+      width: '100%',
+      padding: '8px 12px',
+      border: '1px solid #d1d5db',
+      borderRadius: '6px',
+      fontSize: '14px',
+      backgroundColor: 'white',
+      outline: 'none',
+      ...style
+    }}
+    {...props}
+  >
+    {children}
+  </select>
+)
+
+const Textarea = ({ value, onChange, placeholder, rows = 3, style, ...props }: any) => (
+  <textarea
+    value={value}
+    onChange={onChange}
+    placeholder={placeholder}
+    rows={rows}
+    style={{
+      width: '100%',
+      padding: '8px 12px',
+      border: '1px solid #d1d5db',
+      borderRadius: '6px',
+      fontSize: '14px',
+      outline: 'none',
+      resize: 'vertical',
+      fontFamily: 'inherit',
+      ...style
+    }}
+    {...props}
+  />
+)
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
