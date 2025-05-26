@@ -334,24 +334,9 @@ export default function NewsroomTracker() {
       {/* Navigation */}
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: 16 }}>
         <div style={{
-          display: 'flex', 
-          gap: 2, 
-          background: 'white', 
-          borderRadius: 8, 
-          padding: 4,
-          boxShadow: '0 1px 3px rgba(0,0,0,.1)',
-          overflowX: 'auto', // Omogućava horizontalno skrolovanje
-          WebkitOverflowScrolling: 'touch', // Smooth scroll na iOS
-          scrollbarWidth: 'none', // Firefox
-          msOverflowStyle: 'none' // IE/Edge
+          display: 'flex', gap: 4, background: 'white', borderRadius: 8, padding: 4,
+          boxShadow: '0 1px 3px rgba(0,0,0,.1)'
         }}>
-          <style>
-            {`
-              div::-webkit-scrollbar {
-                display: none;
-              }
-            `}
-          </style>
           {[
             { id: 'dashboard', label: 'Dashboard',     icon: Users },
             { id: 'add-task',  label: 'Dodaj rad',     icon: Plus },
@@ -364,21 +349,11 @@ export default function NewsroomTracker() {
               <button key={t.id}
                 onClick={() => setActiveTab(t.id as any)}
                 style={{
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 6, 
-                  padding: isLarge ? '8px 16px' : '8px 12px',
-                  borderRadius: 6, 
-                  border: 'none', 
-                  cursor: 'pointer', 
-                  fontSize: isLarge ? 14 : 13,
-                  background: active ? '#dbeafe' : 'transparent', 
-                  color: active ? '#1d4ed8' : '#6b7280',
-                  whiteSpace: 'nowrap', // Sprečava prelom teksta
-                  flexShrink: 0 // Sprečava skupljanje dugmeta
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px',
+                  borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 14,
+                  background: active ? '#dbeafe' : 'transparent', color: active ? '#1d4ed8' : '#6b7280'
                 }}>
-                <Icon size={16} />
-                <span>{isLarge ? t.label : t.label.split(' ')[0]}</span>
+                <Icon size={18} /><span>{t.label}</span>
               </button>
             )
           })}
