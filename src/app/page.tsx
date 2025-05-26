@@ -213,59 +213,109 @@ export default function NewsroomTracker() {
   const getStat = (v: string) => statuses.find(s => s.value === v)?.label || v
   const getPrio = (v: string) => priorities.find(p => p.value === v)?.label || v
 
+  /* delete helpers (skraćeno) */
+  const delTask  = async (id: string) => { if (!confirm('Obrisati rad?')) return; setLoading(true); try { await fetch(`/api/tasks/${id}`, { method: 'DELETE' }); await fetchTasks() } finally { setLoading(false) } }
+  const delEvent = async (id: string) => { if (!confirm('Obrisati događaj?')) return; setLoading(true); try { await fetch(`/api/events/${id}`, { method: 'DELETE' }); await fetchEvents() } finally { setLoading(false) } }
+  const delIdea  = async (id: string) => { if (!confirm('Obrisati ideju?'))  return; setLoading(true); try { await fetch(`/api/ideas/${id}`,  { method: 'DELETE' }); await fetchIdeas()  } finally { setLoading(false) } }
+
   /* TaskCard – interno */
   const TaskCard = ({ task }: { task: Task }) => (
     <div style={{
       background: 'white', borderRadius: 8, border: '1px solid #e5e7eb',
       padding: 16, marginBottom: 12, boxShadow: '0 1px 3px rgba(0,0,0,.1)',
-      position: 'relative'
+      position: 'relative',
+      isolation: 'isolate',
+      paddingRight: 40, // Više prostora za dugme na mobilnom
+      wordWrap: 'break-word',
+      overflowWrap: 'break-word'
     }}>
       <button
         onClick={() => delTask(task.id)}
         disabled={loading}
         style={{
-          position: 'absolute', top: 8, right: 8,
-          background: '#ef4444', color: 'white',
-          border: 'none', borderRadius: 4, padding: 4,
-          cursor: 'pointer', opacity: .7
+          position: 'absolute', 
+          top: 8, 
+          right: 8,
+          background: '#ef4444', 
+          color: 'white',
+          border: 'none', 
+          borderRadius: 4, 
+          padding: 6,
+          cursor: 'pointer', 
+          opacity: .8,
+          zIndex: 1,
+          width: 28,
+          height: 28,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0 // Sprečava skupljanje dugmeta
         }}
-      ><Trash2 size={12} /></button>
+        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+      ><Trash2 size={14} /></button>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-        <span style={{ background: '#dbeafe', color: '#2563eb', padding: '2px 8px', borderRadius: 4, fontSize: 12 }}>
+      <div style={{ 
+        display: 'flex', 
+        gap: 4, 
+        marginBottom: 8, 
+        flexWrap: 'wrap', // Omogućava prelom na novu liniju
+        paddingRight: 0
+      }}>
+        <span style={{ background: '#dbeafe', color: '#2563eb', padding: '2px 6px', borderRadius: 4, fontSize: 11, whiteSpace: 'nowrap' }}>
           {task.user.name}
         </span>
-        <span style={{ background: '#f3f4f6', padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>
+        <span style={{ background: '#f3f4f6', padding: '2px 6px', borderRadius: 4, fontSize: 11, whiteSpace: 'nowrap' }}>
           {getCat(task.category)}
         </span>
         <span style={{
           background: task.status === 'PUBLISHED' ? '#dcfce7' : task.status === 'COMPLETED' ? '#dbeafe' : '#fef3c7',
           color:     task.status === 'PUBLISHED' ? '#166534' : task.status === 'COMPLETED' ? '#1d4ed8' : '#d97706',
-          padding: '2px 6px', borderRadius: 4, fontSize: 12
+          padding: '2px 6px', borderRadius: 4, fontSize: 11, whiteSpace: 'nowrap'
         }}>{getStat(task.status)}</span>
       </div>
 
-      <small style={{ color: '#6b7280' }}>{new Date(task.createdAt).toLocaleString('sr-RS')}</small>
-      <p style={{ margin: '8px 0', color: '#374151' }}>{task.description}</p>
+      <small style={{ color: '#6b7280', display: 'block', marginBottom: 8 }}>
+        {new Date(task.createdAt).toLocaleString('sr-RS')}
+      </small>
+      
+      {task.description && (
+        <p style={{ margin: '8px 0', color: '#374151', lineHeight: 1.4 }}>{task.description}</p>
+      )}
 
       {task.link && (
-        <a href={task.link} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', fontSize: 14 }}>
-          <ExternalLink size={12} /> {task.link}
+        <a href={task.link} target="_blank" rel="noopener noreferrer" 
+           style={{ 
+             color: '#3b82f6', 
+             fontSize: 14, 
+             display: 'inline-flex', 
+             alignItems: 'center', 
+             gap: 4,
+             wordBreak: 'break-all',
+             marginTop: 8
+           }}>
+          <ExternalLink size={12} /> 
+          <span style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {task.link}
+          </span>
         </a>
       )}
 
       {task.notes && (
-        <p style={{ background: '#f9fafb', padding: 8, borderRadius: 4, fontSize: 14, color: '#6b7280' }}>
+        <p style={{ 
+          background: '#f9fafb', 
+          padding: 8, 
+          borderRadius: 4, 
+          fontSize: 14, 
+          color: '#6b7280',
+          marginTop: 8,
+          lineHeight: 1.4
+        }}>
           {task.notes}
         </p>
       )}
     </div>
   )
-
-  /* delete helpers (skraćeno) */
-  const delTask  = async (id: string) => { if (!confirm('Obrisati rad?')) return; setLoading(true); try { await fetch(`/api/tasks/${id}`, { method: 'DELETE' }); await fetchTasks() } finally { setLoading(false) } }
-  const delEvent = async (id: string) => { if (!confirm('Obrisati događaj?')) return; setLoading(true); try { await fetch(`/api/events/${id}`, { method: 'DELETE' }); await fetchEvents() } finally { setLoading(false) } }
-  const delIdea  = async (id: string) => { if (!confirm('Obrisati ideju?'))  return; setLoading(true); try { await fetch(`/api/ideas/${id}`,  { method: 'DELETE' }); await fetchIdeas()  } finally { setLoading(false) } }
 
   /* ---------- 4. RENDER ---------- */
 
@@ -311,7 +361,13 @@ export default function NewsroomTracker() {
       </div>
 
       {/* ---------- GLAVNI SADRŽAJ ---------- */}
-      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 16px 32px' }}>
+      <div style={{ 
+        maxWidth: 1152, 
+        margin: '0 auto', 
+        padding: '0 16px 32px',
+        // Dodajemo overflow hidden za mob
+        overflow: 'hidden' 
+      }}>
 
         {/* DASHBOARD --------------------------------------------------- */}
         {activeTab === 'dashboard' && (
@@ -340,23 +396,52 @@ export default function NewsroomTracker() {
                 </h2>
                 {upcomingEvents.length
                   ? upcomingEvents.map(e => (
-                      <div key={e.id} style={{ borderLeft: '4px solid #3b82f6', paddingLeft: 16, marginBottom: 12, position: 'relative' }}>
+                        <div key={e.id} style={{ 
+                        borderLeft: '4px solid #3b82f6', 
+                        paddingLeft: 16, 
+                        marginBottom: 12, 
+                        position: 'relative',
+                        paddingRight: 40,
+                        isolation: 'isolate',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}>
                         <button onClick={() => delEvent(e.id)} disabled={loading}
-                          style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', border: 'none',
-                                   borderRadius: 4, padding: 4, color: 'white', cursor: 'pointer', opacity: .7 }}>
-                          <Trash2 size={12} />
+                          style={{ 
+                            position: 'absolute', 
+                            top: 4, 
+                            right: 4, 
+                            background: '#ef4444', 
+                            border: 'none',
+                            borderRadius: 4, 
+                            padding: 6, 
+                            color: 'white', 
+                            cursor: 'pointer', 
+                            opacity: .8,
+                            zIndex: 1,
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+                        >
+                          <Trash2 size={14} />
                         </button>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <strong>{e.title}</strong>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, alignItems: 'flex-start' }}>
+                          <strong style={{ flex: '1', minWidth: 0, wordBreak: 'break-word' }}>{e.title}</strong>
                           <span style={{
-                            fontSize: 12, padding: '2px 6px', borderRadius: 4,
+                            fontSize: 11, padding: '2px 6px', borderRadius: 4, whiteSpace: 'nowrap', flexShrink: 0,
                             background: e.priority === 'HIGH' ? '#fecaca'
                                      : e.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
                             color: e.priority === 'HIGH' ? '#991b1b'
                                  : e.priority === 'MEDIUM' ? '#d97706' : '#166534'
                           }}>{getPrio(e.priority)}</span>
                         </div>
-                        <small style={{ color: '#6b7280' }}>
+                        <small style={{ color: '#6b7280', display: 'block', margin: '4px 0' }}>
                           📅 {new Date(e.date).toLocaleDateString('sr-RS')}{e.time && ` u ${e.time}`}
                         </small>
                         <div style={{ color: '#3b82f6', fontSize: 14 }}>👤 {e.user.name}</div>
@@ -492,18 +577,57 @@ export default function NewsroomTracker() {
                 <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Kalendar događaja</h2>
                 {events.length
                   ? events.map(e => (
-                      <div key={e.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, position: 'relative', marginBottom: 16 }}>
+                      <div key={e.id} style={{ 
+                        border: '1px solid #e5e7eb', 
+                        borderRadius: 8, 
+                        padding: 16, 
+                        position: 'relative', 
+                        marginBottom: 16,
+                        paddingRight: 40,
+                        isolation: 'isolate',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}>
                         <button onClick={() => delEvent(e.id)} disabled={loading}
-                          style={{ position: 'absolute', top: 8, right: 8, background: '#ef4444',
-                                   border: 'none', borderRadius: 4, padding: 4, color: 'white', cursor: 'pointer', opacity: .7 }}>
-                          <Trash2 size={12} />
+                          style={{ 
+                            position: 'absolute', 
+                            top: 8, 
+                            right: 8, 
+                            background: '#ef4444',
+                            border: 'none', 
+                            borderRadius: 4, 
+                            padding: 6, 
+                            color: 'white', 
+                            cursor: 'pointer', 
+                            opacity: .8,
+                            zIndex: 1,
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+                        >
+                          <Trash2 size={14} />
                         </button>
-                        <strong>{e.title}</strong>
+                        <strong style={{ display: 'block', marginBottom: 8, wordBreak: 'break-word' }}>{e.title}</strong>
                         <div style={{ fontSize: 12, color: '#6b7280', margin: '4px 0' }}>
                           📅 {new Date(e.date).toLocaleDateString('sr-RS')}{e.time && ` u ${e.time}`}
                         </div>
-                        <div style={{ fontSize: 12, color: '#3b82f6' }}>👤 {e.user.name}</div>
-                        {e.notes && <p style={{ fontSize: 14, background: '#f9fafb', padding: 8, borderRadius: 4 }}>{e.notes}</p>}
+                        <div style={{ fontSize: 12, color: '#3b82f6', marginBottom: 8 }}>👤 {e.user.name}</div>
+                        {e.notes && (
+                          <p style={{ 
+                            fontSize: 14, 
+                            background: '#f9fafb', 
+                            padding: 8, 
+                            borderRadius: 4,
+                            lineHeight: 1.4,
+                            wordBreak: 'break-word'
+                          }}>{e.notes}</p>
+                        )}
                       </div>
                     ))
                   : <p style={{ textAlign: 'center', color: '#6b7280', padding: '32px 0' }}>Nema događaja</p>}
@@ -562,23 +686,73 @@ export default function NewsroomTracker() {
                 <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Bank ideja ({ideas.length})</h2>
                 {ideas.length
                   ? ideas.map(i => (
-                      <div key={i.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, position: 'relative', marginBottom: 16 }}>
+                      <div key={i.id} style={{ 
+                        border: '1px solid #e5e7eb', 
+                        borderRadius: 8, 
+                        padding: 16, 
+                        position: 'relative', 
+                        marginBottom: 16,
+                        paddingRight: 40,
+                        isolation: 'isolate',
+                        wordWrap: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}>
                         <button onClick={() => delIdea(i.id)} disabled={loading}
-                          style={{ position: 'absolute', top: 8, right: 8, background: '#ef4444',
-                                   border: 'none', borderRadius: 4, padding: 4, color: 'white', cursor: 'pointer', opacity: .7 }}>
-                          <Trash2 size={12} />
+                          style={{ 
+                            position: 'absolute', 
+                            top: 8, 
+                            right: 8, 
+                            background: '#ef4444',
+                            border: 'none', 
+                            borderRadius: 4, 
+                            padding: 6, 
+                            color: 'white', 
+                            cursor: 'pointer', 
+                            opacity: .8,
+                            zIndex: 1,
+                            width: 28,
+                            height: 28,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
+                        >
+                          <Trash2 size={14} />
                         </button>
-                        <strong>{i.title}</strong>
-                        <div style={{ display: 'flex', gap: 8, margin: '4px 0' }}>
-                          <span style={{ background: '#e879f9', color: '#581c87', padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>{i.category}</span>
+                        <strong style={{ display: 'block', marginBottom: 8, wordBreak: 'break-word' }}>{i.title}</strong>
+                        <div style={{ display: 'flex', gap: 6, margin: '4px 0', flexWrap: 'wrap' }}>
+                          <span style={{ 
+                            background: '#e879f9', 
+                            color: '#581c87', 
+                            padding: '2px 6px', 
+                            borderRadius: 4, 
+                            fontSize: 11,
+                            whiteSpace: 'nowrap'  
+                          }}>{i.category}</span>
                           <span style={{
                             background: i.priority === 'HIGH' ? '#fecaca' : i.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
                             color:     i.priority === 'HIGH' ? '#991b1b' : i.priority === 'MEDIUM' ? '#d97706' : '#166534',
-                            padding: '2px 6px', borderRadius: 4, fontSize: 12
+                            padding: '2px 6px', 
+                            borderRadius: 4, 
+                            fontSize: 11,
+                            whiteSpace: 'nowrap'
                           }}>{getPrio(i.priority)}</span>
                         </div>
-                        {i.description && <p style={{ fontSize: 14, color: '#6b7280' }}>{i.description}</p>}
-                        <small style={{ color: '#9ca3af' }}>Dodao: {i.user.name} · {new Date(i.createdAt).toLocaleDateString('sr-RS')}</small>
+                        {i.description && (
+                          <p style={{ 
+                            fontSize: 14, 
+                            color: '#6b7280', 
+                            marginBottom: 8,
+                            lineHeight: 1.4,
+                            wordBreak: 'break-word'
+                          }}>{i.description}</p>
+                        )}
+                        <small style={{ color: '#9ca3af', display: 'block', lineHeight: 1.3 }}>
+                          Dodao: {i.user.name} · {new Date(i.createdAt).toLocaleDateString('sr-RS')}
+                        </small>
                       </div>
                     ))
                   : <p style={{ textAlign: 'center', color: '#6b7280', padding: '32px 0' }}>Nema sačuvanih ideja</p>}
