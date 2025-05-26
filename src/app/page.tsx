@@ -123,30 +123,48 @@ export default function NewsroomTracker() {
   const fetchTasks = async () => {
     try {
       const response = await fetch('/api/tasks')
-      const data = await response.json()
-      setTasks(data)
+      if (response.ok) {
+        const data = await response.json()
+        setTasks(Array.isArray(data) ? data : [])
+      } else {
+        console.error('API Error:', response.status)
+        setTasks([])
+      }
     } catch (error) {
       console.error('Error fetching tasks:', error)
+      setTasks([])
     }
   }
 
   const fetchEvents = async () => {
     try {
       const response = await fetch('/api/events')
-      const data = await response.json()
-      setEvents(data)
+      if (response.ok) {
+        const data = await response.json()
+        setEvents(Array.isArray(data) ? data : [])
+      } else {
+        console.error('API Error:', response.status)
+        setEvents([])
+      }
     } catch (error) {
       console.error('Error fetching events:', error)
+      setEvents([])
     }
   }
 
   const fetchIdeas = async () => {
     try {
       const response = await fetch('/api/ideas')
-      const data = await response.json()
-      setIdeas(data)
+      if (response.ok) {
+        const data = await response.json()
+        setIdeas(Array.isArray(data) ? data : [])
+      } else {
+        console.error('API Error:', response.status)
+        setIdeas([])
+      }
     } catch (error) {
       console.error('Error fetching ideas:', error)
+      setIdeas([])
     }
   }
 
@@ -245,11 +263,11 @@ export default function NewsroomTracker() {
     day: 'numeric'
   })
 
-  const todaysTasks = tasks.filter(task => 
+  const todaysTasks = (tasks || []).filter(task => 
     new Date(task.date).toISOString().split('T')[0] === today
   )
 
-  const upcomingEvents = events.filter(event => {
+  const upcomingEvents = (events || []).filter(event => {
     const eventDate = new Date(event.date)
     const now = new Date()
     const nextWeek = new Date()
@@ -371,8 +389,8 @@ export default function NewsroomTracker() {
     }}
     onMouseOut={(e: any) => {
       if (!disabled) e.target.style.backgroundColor = '#2563eb'
-      }}
-      {...props}
+    }}
+    {...props}
     >
       {children}
     </button>
