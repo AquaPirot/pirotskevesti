@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Calendar, Plus, Users, Lightbulb, Clock, ExternalLink } from 'lucide-react'
+import { Calendar, Plus, Users, Lightbulb, Clock, ExternalLink, Trash2 } from 'lucide-react'
 
 interface Task {
   id: string
@@ -70,7 +70,7 @@ export default function NewsroomTracker() {
   const [events, setEvents] = useState<Event[]>([])
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [loading, setLoading] = useState(false)
-  const [isLargeScreen, setIsLargeScreen] = useState(true) // Default true za server
+  const [isLargeScreen, setIsLargeScreen] = useState(true)
 
   // Form states
   const [taskForm, setTaskForm] = useState({
@@ -105,18 +105,13 @@ export default function NewsroomTracker() {
     fetchEvents()
     fetchIdeas()
     
-    // Proveri screen size
     const handleResize = () => {
       setIsLargeScreen(window.innerWidth >= 1024)
     }
     
-    // Set initial size
     handleResize()
-    
-    // Add resize listener
     window.addEventListener('resize', handleResize)
     
-    // Cleanup
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
@@ -168,9 +163,72 @@ export default function NewsroomTracker() {
     }
   }
 
-  // Add task
+  // Delete functions
+  const deleteTask = async (taskId: string) => {
+    if (!confirm('Da li ste sigurni da želite da obrišete ovaj rad?')) return
+    
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE'
+      })
+      
+      if (response.ok) {
+        await fetchTasks()
+      } else {
+        console.error('Failed to delete task')
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteEvent = async (eventId: string) => {
+    if (!confirm('Da li ste sigurni da želite da obrišete ovaj događaj?')) return
+    
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: 'DELETE'
+      })
+      
+      if (response.ok) {
+        await fetchEvents()
+      } else {
+        console.error('Failed to delete event')
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const deleteIdea = async (ideaId: string) => {
+    if (!confirm('Da li ste sigurni da želite da obrišete ovu ideju?')) return
+    
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/ideas/${ideaId}`, {
+        method: 'DELETE'
+      })
+      
+      if (response.ok) {
+        await fetchIdeas()
+      } else {
+        console.error('Failed to delete idea')
+      }
+    } catch (error) {
+      console.error('Error deleting idea:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Add functions (ostaju isti)
   const addTask = async () => {
-    // Uklanjamo uslov za obavezno polje description
     setLoading(true)
     try {
       const response = await fetch('/api/tasks', {
@@ -284,6 +342,7 @@ export default function NewsroomTracker() {
   const getPriorityLabel = (value: string) => 
     priorities.find(priority => priority.value === value)?.label || value
 
+  // Ažuriran TaskCard sa dugmetom za brisanje
   const TaskCard = ({ task }: { task: Task }) => (
     <div style={{
       backgroundColor: 'white',
@@ -291,13 +350,42 @@ export default function NewsroomTracker() {
       border: '1px solid #e5e7eb',
       padding: '16px',
       marginBottom: '12px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      position: 'relative'
     }}>
+      {/* Delete button */}
+      <button
+        onClick={() => deleteTask(task.id)}
+        disabled={loading}
+        style={{
+          position: 'absolute',
+          top: '8px',
+          right: '8px',
+          background: '#ef4444',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          padding: '4px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: 0.7,
+          transition: 'opacity 0.2s'
+        }}
+        onMouseOver={(e: any) => e.target.style.opacity = '1'}
+        onMouseOut={(e: any) => e.target.style.opacity = '0.7'}
+        title="Obriši rad"
+      >
+        <Trash2 size={12} />
+      </button>
+
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: '8px'
+        marginBottom: '8px',
+        paddingRight: '24px' // Dodato zbog dugmeta za brisanje
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{
@@ -330,9 +418,9 @@ export default function NewsroomTracker() {
             {getStatusLabel(task.status)}
           </span>
         </div>
-        <span style={{ fontSize: '12px', color: '#6b7280' }}>
-          {new Date(task.createdAt).toLocaleString('sr-RS')}
-        </span>
+      </div>
+      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
+        {new Date(task.createdAt).toLocaleString('sr-RS')}
       </div>
       <p style={{ color: '#374151', marginBottom: '8px' }}>{task.description}</p>
       {task.link && (
@@ -385,12 +473,12 @@ export default function NewsroomTracker() {
         ...style
       }}
       onMouseOver={(e: any) => {
-      if (!disabled) e.target.style.backgroundColor = '#1d4ed8'
-    }}
-    onMouseOut={(e: any) => {
-      if (!disabled) e.target.style.backgroundColor = '#2563eb'
-    }}
-    {...props}
+        if (!disabled) e.target.style.backgroundColor = '#1d4ed8'
+      }}
+      onMouseOut={(e: any) => {
+        if (!disabled) e.target.style.backgroundColor = '#2563eb'
+      }}
+      {...props}
     >
       {children}
     </button>
@@ -615,12 +703,41 @@ export default function NewsroomTracker() {
                         borderLeft: '4px solid #3b82f6',
                         paddingLeft: '16px',
                         paddingTop: '8px',
-                        paddingBottom: '8px'
+                        paddingBottom: '8px',
+                        position: 'relative'
                       }}>
+                        {/* Delete button za događaje */}
+                        <button
+                          onClick={() => deleteEvent(event.id)}
+                          disabled={loading}
+                          style={{
+                            position: 'absolute',
+                            top: '4px',
+                            right: '4px',
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: 0.7,
+                            transition: 'opacity 0.2s'
+                          }}
+                          onMouseOver={(e: any) => e.target.style.opacity = '1'}
+                          onMouseOut={(e: any) => e.target.style.opacity = '0.7'}
+                          title="Obriši događaj"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+
                         <div style={{
                           display: 'flex',
                           justifyContent: 'space-between',
-                          alignItems: 'flex-start'
+                          alignItems: 'flex-start',
+                          paddingRight: '24px'
                         }}>
                           <h3 style={{ fontWeight: '500', margin: 0 }}>{event.title}</h3>
                           <span style={{
@@ -720,7 +837,8 @@ export default function NewsroomTracker() {
           </div>
         )}
 
-        {activeTab === 'add-task' && (
+
+{activeTab === 'add-task' && (
           <Card style={{ maxWidth: '512px' }}>
             <div style={{ padding: '24px' }}>
               <h2 style={{
@@ -1003,8 +1121,7 @@ export default function NewsroomTracker() {
                     disabled={loading}
                     style={{ 
                       width: '100%',
-                      backgroundColor: '#16a34a',
-                      ':hover': { backgroundColor: '#15803d' }
+                      backgroundColor: '#16a34a'
                     }}
                   >
                     {loading ? 'Dodajem...' : 'Dodaj događaj'}
@@ -1029,13 +1146,42 @@ export default function NewsroomTracker() {
                       <div key={event.id} style={{
                         border: '1px solid #e5e7eb',
                         borderRadius: '8px',
-                        padding: '16px'
+                        padding: '16px',
+                        position: 'relative'
                       }}>
+                        {/* Delete button za događaje u listi */}
+                        <button
+                          onClick={() => deleteEvent(event.id)}
+                          disabled={loading}
+                          style={{
+                            position: 'absolute',
+                            top: '8px',
+                            right: '8px',
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: 0.7,
+                            transition: 'opacity 0.2s'
+                          }}
+                          onMouseOver={(e: any) => e.target.style.opacity = '1'}
+                          onMouseOut={(e: any) => e.target.style.opacity = '0.7'}
+                          title="Obriši događaj"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+
                         <div style={{
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'flex-start',
-                          marginBottom: '8px'
+                          marginBottom: '8px',
+                          paddingRight: '24px'
                         }}>
                           <h3 style={{ fontWeight: '500', margin: 0 }}>{event.title}</h3>
                           <span style={{
@@ -1221,13 +1367,42 @@ export default function NewsroomTracker() {
                       <div key={idea.id} style={{
                         border: '1px solid #e5e7eb',
                         borderRadius: '8px',
-                        padding: '16px'
+                        padding: '16px',
+                        position: 'relative'
                       }}>
+                        {/* Delete button za ideje */}
+                        <button
+                          onClick={() => deleteIdea(idea.id)}
+                          disabled={loading}
+                          style={{
+                            position: 'absolute',
+                            top: '8px',
+                            right: '8px',
+                            background: '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: 0.7,
+                            transition: 'opacity 0.2s'
+                          }}
+                          onMouseOver={(e: any) => e.target.style.opacity = '1'}
+                          onMouseOut={(e: any) => e.target.style.opacity = '0.7'}
+                          title="Obriši ideju"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+
                         <div style={{
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'flex-start',
-                          marginBottom: '8px'
+                          marginBottom: '8px',
+                          paddingRight: '24px'
                         }}>
                           <h3 style={{ fontWeight: '500', margin: 0 }}>{idea.title}</h3>
                           <div style={{ display: 'flex', gap: '8px' }}>
