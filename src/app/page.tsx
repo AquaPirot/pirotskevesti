@@ -1,62 +1,117 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Calendar, Plus, Users, Lightbulb, Clock, ExternalLink, Trash2 } from 'lucide-react'
+import {
+  Calendar, Plus, Users, Lightbulb, Clock,
+  ExternalLink, Trash2
+} from 'lucide-react'
+
+/* ---------- 1. HELPER KOMPONENTE ---------- */
+
+const Button = ({ children, onClick, disabled, style = {}, ...p }: any) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    style={{
+      background: disabled ? '#9ca3af' : (style as any).background || '#2563eb',
+      color: 'white',
+      padding: '10px 16px',
+      borderRadius: 6,
+      border: 'none',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      fontSize: 14,
+      fontWeight: 500,
+      ...style
+    }}
+    {...p}
+  >{children}</button>
+)
+
+const Card = ({ children, style = {} }: any) => (
+  <div style={{
+    background: 'white',
+    borderRadius: 8,
+    border: '1px solid #e5e7eb',
+    boxShadow: '0 1px 3px rgba(0,0,0,.1)',
+    ...style
+  }}>{children}</div>
+)
+
+const Input = ({ type = 'text', value, onChange, ...p }: any) => (
+  <input
+    type={type}
+    value={value}
+    onChange={onChange}
+    style={{
+      width: '100%', padding: '8px 12px',
+      border: '1px solid #d1d5db', borderRadius: 6,
+      fontSize: 14, outline: 'none'
+    }}
+    {...p}
+  />
+)
+
+const Select = ({ value, onChange, children, ...p }: any) => (
+  <select
+    value={value}
+    onChange={onChange}
+    style={{
+      width: '100%', padding: '8px 12px',
+      border: '1px solid #d1d5db', borderRadius: 6,
+      fontSize: 14, background: 'white', outline: 'none'
+    }}
+    {...p}
+  >{children}</select>
+)
+
+const Textarea = ({ value, onChange, rows = 3, ...p }: any) => (
+  <textarea
+    value={value}
+    onChange={onChange}
+    rows={rows}
+    style={{
+      width: '100%', padding: '8px 12px',
+      border: '1px solid #d1d5db', borderRadius: 6,
+      fontSize: 14, outline: 'none', resize: 'vertical',
+      fontFamily: 'inherit'
+    }}
+    {...p}
+  />
+)
+
+/* ---------- 2. TIPOVI & LISTE ---------- */
 
 interface Task {
-  id: string
-  description: string
-  link?: string
-  category: string
-  status: string
-  notes?: string
-  date: string
-  createdAt: string
-  user: { name: string }
+  id: string; description: string; link?: string;
+  category: string; status: string; notes?: string;
+  date: string; createdAt: string; user: { name: string }
 }
-
 interface Event {
-  id: string
-  title: string
-  date: string
-  time?: string
-  priority: string
-  notes?: string
-  user: { name: string }
+  id: string; title: string; date: string; time?: string;
+  priority: string; notes?: string; user: { name: string }
 }
-
 interface Idea {
-  id: string
-  title: string
-  description?: string
-  priority: string
-  category: string
-  createdAt: string
+  id: string; title: string; description?: string;
+  priority: string; category: string; createdAt: string;
   user: { name: string }
 }
 
 const categories = [
-  { value: 'ARTICLE', label: 'Članak' },
-  { value: 'VIDEO', label: 'Video' },
-  { value: 'INTERVIEW', label: 'Intervju' },
-  { value: 'RESEARCH', label: 'Istraživanje' },
-  { value: 'EDITING', label: 'Montaža' },
-  { value: 'SOCIAL_MEDIA', label: 'Društvene mreže' },
+  { value: 'ARTICLE', label: 'Članak' }, { value: 'VIDEO', label: 'Video' },
+  { value: 'INTERVIEW', label: 'Intervju' }, { value: 'RESEARCH', label: 'Istraživanje' },
+  { value: 'EDITING', label: 'Montaža' }, { value: 'SOCIAL_MEDIA', label: 'Društvene mreže' },
   { value: 'OTHER', label: 'Ostalo' }
 ]
-
 const statuses = [
   { value: 'IN_PROGRESS', label: 'U radu' },
-  { value: 'COMPLETED', label: 'Završeno' },
-  { value: 'PUBLISHED', label: 'Objavljeno' }
+  { value: 'COMPLETED',   label: 'Završeno' },
+  { value: 'PUBLISHED',   label: 'Objavljeno' }
 ]
-
 const priorities = [
-  { value: 'HIGH', label: 'Visok' },
+  { value: 'HIGH',   label: 'Visok' },
   { value: 'MEDIUM', label: 'Srednji' },
-  { value: 'LOW', label: 'Nizak' }
+  { value: 'LOW',    label: 'Nizak' }
 ]
-
 const users = [
   { id: 'novinar', name: 'Novinar' },
   { id: 'snimatelj', name: 'Snimatelj' },
@@ -64,1412 +119,474 @@ const users = [
   { id: 'agencija', name: 'Agencija' }
 ]
 
+/* ---------- 3. GLAVNA KOMPONENTA ---------- */
+
 export default function NewsroomTracker() {
-  const [activeTab, setActiveTab] = useState('dashboard')
-  const [tasks, setTasks] = useState<Task[]>([])
+  /* state */
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'add-task' | 'calendar' | 'ideas'>('dashboard')
+  const [tasks,  setTasks]  = useState<Task[]>([])
   const [events, setEvents] = useState<Event[]>([])
-  const [ideas, setIdeas] = useState<Idea[]>([])
+  const [ideas,  setIdeas]  = useState<Idea[]>([])
   const [loading, setLoading] = useState(false)
-  const [isLargeScreen, setIsLargeScreen] = useState(true)
+  const [isLarge, setIsLarge] = useState(true)
 
-  // Form states
+  /* forme */
   const [taskForm, setTaskForm] = useState({
-    userId: 'Novinar',
-    category: 'ARTICLE',
-    description: '',
-    link: '',
-    status: 'IN_PROGRESS',
-    notes: ''
+    userId: 'Novinar', category: 'ARTICLE',
+    description: '', link: '', status: 'IN_PROGRESS', notes: ''
   })
-
   const [eventForm, setEventForm] = useState({
-    title: '',
-    date: '',
-    time: '',
-    priority: 'MEDIUM',
-    userId: 'Novinar',
-    notes: ''
+    title: '', date: '', time: '',
+    priority: 'MEDIUM', userId: 'Novinar', notes: ''
   })
-
   const [ideaForm, setIdeaForm] = useState({
-    title: '',
-    description: '',
-    priority: 'MEDIUM',
-    category: 'Priča',
-    userId: 'Novinar'
+    title: '', description: '',
+    priority: 'MEDIUM', category: 'Priča', userId: 'Novinar'
   })
 
-  // Fetch data
+  /* efekat – prvi fetch + resize listener */
   useEffect(() => {
-    fetchTasks()
-    fetchEvents()
-    fetchIdeas()
-    
-    const handleResize = () => {
-      setIsLargeScreen(window.innerWidth >= 1024)
-    }
-    
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    
-    return () => window.removeEventListener('resize', handleResize)
+    Promise.all([fetchTasks(), fetchEvents(), fetchIdeas()])
+    const onResize = () => setIsLarge(window.innerWidth >= 1024)
+    onResize(); window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  const fetchTasks = async () => {
-    try {
-      const response = await fetch('/api/tasks')
-      if (response.ok) {
-        const data = await response.json()
-        setTasks(Array.isArray(data) ? data : [])
-      } else {
-        console.error('API Error:', response.status)
-        setTasks([])
-      }
-    } catch (error) {
-      console.error('Error fetching tasks:', error)
-      setTasks([])
-    }
-  }
+  /* fetch helpers  */
+  const fetchTasks  = async () => { try { const r = await fetch('/api/tasks');  r.ok && setTasks(await r.json()) } catch {} }
+  const fetchEvents = async () => { try { const r = await fetch('/api/events'); r.ok && setEvents(await r.json()) } catch {} }
+  const fetchIdeas  = async () => { try { const r = await fetch('/api/ideas');  r.ok && setIdeas(await r.json()) } catch {} }
 
-  const fetchEvents = async () => {
-    try {
-      const response = await fetch('/api/events')
-      if (response.ok) {
-        const data = await response.json()
-        setEvents(Array.isArray(data) ? data : [])
-      } else {
-        console.error('API Error:', response.status)
-        setEvents([])
-      }
-    } catch (error) {
-      console.error('Error fetching events:', error)
-      setEvents([])
-    }
-  }
-
-  const fetchIdeas = async () => {
-    try {
-      const response = await fetch('/api/ideas')
-      if (response.ok) {
-        const data = await response.json()
-        setIdeas(Array.isArray(data) ? data : [])
-      } else {
-        console.error('API Error:', response.status)
-        setIdeas([])
-      }
-    } catch (error) {
-      console.error('Error fetching ideas:', error)
-      setIdeas([])
-    }
-  }
-
-  // Delete functions
-  const deleteTask = async (taskId: string) => {
-    if (!confirm('Da li ste sigurni da želite da obrišete ovaj rad?')) return
-    
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'DELETE'
-      })
-      
-      if (response.ok) {
-        await fetchTasks()
-      } else {
-        console.error('Failed to delete task')
-      }
-    } catch (error) {
-      console.error('Error deleting task:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const deleteEvent = async (eventId: string) => {
-    if (!confirm('Da li ste sigurni da želite da obrišete ovaj događaj?')) return
-    
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/events/${eventId}`, {
-        method: 'DELETE'
-      })
-      
-      if (response.ok) {
-        await fetchEvents()
-      } else {
-        console.error('Failed to delete event')
-      }
-    } catch (error) {
-      console.error('Error deleting event:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const deleteIdea = async (ideaId: string) => {
-    if (!confirm('Da li ste sigurni da želite da obrišete ovu ideju?')) return
-    
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/ideas/${ideaId}`, {
-        method: 'DELETE'
-      })
-      
-      if (response.ok) {
-        await fetchIdeas()
-      } else {
-        console.error('Failed to delete idea')
-      }
-    } catch (error) {
-      console.error('Error deleting idea:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Add functions (ostaju isti)
+  /* addTask – opis NIJE obavezan */
   const addTask = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/tasks', {
+      await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(taskForm)
       })
-      
-      if (response.ok) {
-        await fetchTasks()
-        setTaskForm({
-          userId: 'Novinar',
-          category: 'ARTICLE',
-          description: '',
-          link: '',
-          status: 'IN_PROGRESS',
-          notes: ''
-        })
-      }
-    } catch (error) {
-      console.error('Error adding task:', error)
-    } finally {
-      setLoading(false)
-    }
+      await fetchTasks()
+      setTaskForm({ ...taskForm, description: '', link: '', notes: '' })
+    } finally { setLoading(false) }
   }
 
+  /* addEvent */
   const addEvent = async () => {
     if (!eventForm.title.trim() || !eventForm.date) return
-    
     setLoading(true)
     try {
-      const response = await fetch('/api/events', {
+      await fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(eventForm)
       })
-      
-      if (response.ok) {
-        await fetchEvents()
-        setEventForm({
-          title: '',
-          date: '',
-          time: '',
-          priority: 'MEDIUM',
-          userId: 'Novinar',
-          notes: ''
-        })
-      }
-    } catch (error) {
-      console.error('Error adding event:', error)
-    } finally {
-      setLoading(false)
-    }
+      await fetchEvents()
+      setEventForm({ ...eventForm, title: '', date: '', time: '', notes: '' })
+    } finally { setLoading(false) }
   }
 
+  /* addIdea */
   const addIdea = async () => {
     if (!ideaForm.title.trim()) return
-    
     setLoading(true)
     try {
-      const response = await fetch('/api/ideas', {
+      await fetch('/api/ideas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ideaForm)
       })
-      
-      if (response.ok) {
-        await fetchIdeas()
-        setIdeaForm({
-          title: '',
-          description: '',
-          priority: 'MEDIUM',
-          category: 'Priča',
-          userId: 'Novinar'
-        })
-      }
-    } catch (error) {
-      console.error('Error adding idea:', error)
-    } finally {
-      setLoading(false)
-    }
+      await fetchIdeas()
+      setIdeaForm({ ...ideaForm, title: '', description: '' })
+    } finally { setLoading(false) }
   }
 
-  // Helper functions
-  const today = new Date().toISOString().split('T')[0]
-  const todayFormatted = new Date().toLocaleDateString('sr-RS', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  /* helpers */
+  const todayISO = new Date().toISOString().split('T')[0]
+  const todaysTasks = tasks.filter(t => new Date(t.date).toISOString().split('T')[0] === todayISO)
+  const upcomingEvents = events
+    .filter(e => {
+      const d = new Date(e.date); const now = new Date(); const next7 = new Date(); next7.setDate(next7.getDate() + 7)
+      return d >= now && d <= next7
+    }).slice(0, 5)
+  const getCat = (v: string) => categories.find(c => c.value === v)?.label || v
+  const getStat = (v: string) => statuses.find(s => s.value === v)?.label || v
+  const getPrio = (v: string) => priorities.find(p => p.value === v)?.label || v
 
-  const todaysTasks = (tasks || []).filter(task => 
-    new Date(task.date).toISOString().split('T')[0] === today
-  )
-
-  const upcomingEvents = (events || []).filter(event => {
-    const eventDate = new Date(event.date)
-    const now = new Date()
-    const nextWeek = new Date()
-    nextWeek.setDate(nextWeek.getDate() + 7)
-    return eventDate >= now && eventDate <= nextWeek
-  }).slice(0, 5)
-
-  const getCategoryLabel = (value: string) => 
-    categories.find(cat => cat.value === value)?.label || value
-
-  const getStatusLabel = (value: string) => 
-    statuses.find(status => status.value === value)?.label || value
-
-  const getPriorityLabel = (value: string) => 
-    priorities.find(priority => priority.value === value)?.label || value
-
-  // Ažuriran TaskCard sa dugmetom za brisanje
+  /* TaskCard – interno */
   const TaskCard = ({ task }: { task: Task }) => (
     <div style={{
-      backgroundColor: 'white',
-      borderRadius: '8px',
-      border: '1px solid #e5e7eb',
-      padding: '16px',
-      marginBottom: '12px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      background: 'white', borderRadius: 8, border: '1px solid #e5e7eb',
+      padding: 16, marginBottom: 12, boxShadow: '0 1px 3px rgba(0,0,0,.1)',
       position: 'relative'
     }}>
-      {/* Delete button */}
       <button
-        onClick={() => deleteTask(task.id)}
+        onClick={() => delTask(task.id)}
         disabled={loading}
         style={{
-          position: 'absolute',
-          top: '8px',
-          right: '8px',
-          background: '#ef4444',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          padding: '4px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: 0.7,
-          transition: 'opacity 0.2s'
+          position: 'absolute', top: 8, right: 8,
+          background: '#ef4444', color: 'white',
+          border: 'none', borderRadius: 4, padding: 4,
+          cursor: 'pointer', opacity: .7
         }}
-        onMouseOver={(e: any) => e.target.style.opacity = '1'}
-        onMouseOut={(e: any) => e.target.style.opacity = '0.7'}
-        title="Obriši rad"
-      >
-        <Trash2 size={12} />
-      </button>
+      ><Trash2 size={12} /></button>
 
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: '8px',
-        paddingRight: '24px' // Dodato zbog dugmeta za brisanje
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{
-            fontSize: '14px',
-            fontWeight: '500',
-            color: '#2563eb',
-            backgroundColor: '#dbeafe',
-            padding: '4px 8px',
-            borderRadius: '4px'
-          }}>
-            {task.user.name}
-          </span>
-          <span style={{
-            fontSize: '12px',
-            backgroundColor: '#f3f4f6',
-            padding: '2px 6px',
-            borderRadius: '4px'
-          }}>
-            {getCategoryLabel(task.category)}
-          </span>
-          <span style={{
-            fontSize: '12px',
-            padding: '2px 6px',
-            borderRadius: '4px',
-            backgroundColor: task.status === 'PUBLISHED' ? '#dcfce7' : 
-                           task.status === 'COMPLETED' ? '#dbeafe' : '#fef3c7',
-            color: task.status === 'PUBLISHED' ? '#166534' : 
-                   task.status === 'COMPLETED' ? '#1d4ed8' : '#d97706'
-          }}>
-            {getStatusLabel(task.status)}
-          </span>
-        </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <span style={{ background: '#dbeafe', color: '#2563eb', padding: '2px 8px', borderRadius: 4, fontSize: 12 }}>
+          {task.user.name}
+        </span>
+        <span style={{ background: '#f3f4f6', padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>
+          {getCat(task.category)}
+        </span>
+        <span style={{
+          background: task.status === 'PUBLISHED' ? '#dcfce7' : task.status === 'COMPLETED' ? '#dbeafe' : '#fef3c7',
+          color:     task.status === 'PUBLISHED' ? '#166534' : task.status === 'COMPLETED' ? '#1d4ed8' : '#d97706',
+          padding: '2px 6px', borderRadius: 4, fontSize: 12
+        }}>{getStat(task.status)}</span>
       </div>
-      <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
-        {new Date(task.createdAt).toLocaleString('sr-RS')}
-      </div>
-      <p style={{ color: '#374151', marginBottom: '8px' }}>{task.description}</p>
+
+      <small style={{ color: '#6b7280' }}>{new Date(task.createdAt).toLocaleString('sr-RS')}</small>
+      <p style={{ margin: '8px 0', color: '#374151' }}>{task.description}</p>
+
       {task.link && (
-        <a 
-          href={task.link} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          style={{
-            color: '#3b82f6',
-            textDecoration: 'underline',
-            fontSize: '14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            marginBottom: '8px'
-          }}
-        >
-          <ExternalLink size={12} />
-          {task.link}
+        <a href={task.link} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', fontSize: 14 }}>
+          <ExternalLink size={12} /> {task.link}
         </a>
       )}
+
       {task.notes && (
-        <p style={{
-          fontSize: '14px',
-          color: '#6b7280',
-          backgroundColor: '#f9fafb',
-          padding: '8px',
-          borderRadius: '4px'
-        }}>
+        <p style={{ background: '#f9fafb', padding: 8, borderRadius: 4, fontSize: 14, color: '#6b7280' }}>
           {task.notes}
         </p>
       )}
     </div>
   )
 
-  // Dodajte ove komponente PRE glavne NewsroomTracker funkcije
+  /* delete helpers (skraćeno) */
+  const delTask  = async (id: string) => { if (!confirm('Obrisati rad?')) return; setLoading(true); try { await fetch(`/api/tasks/${id}`, { method: 'DELETE' }); await fetchTasks() } finally { setLoading(false) } }
+  const delEvent = async (id: string) => { if (!confirm('Obrisati događaj?')) return; setLoading(true); try { await fetch(`/api/events/${id}`, { method: 'DELETE' }); await fetchEvents() } finally { setLoading(false) } }
+  const delIdea  = async (id: string) => { if (!confirm('Obrisati ideju?'))  return; setLoading(true); try { await fetch(`/api/ideas/${id}`,  { method: 'DELETE' }); await fetchIdeas()  } finally { setLoading(false) } }
 
-// Najjednostavnije rešenje - bez hover efekata
+  /* ---------- 4. RENDER ---------- */
 
-const Button = ({ children, onClick, disabled, style, ...props }: any) => (
-  <button
-    onClick={onClick}
-    disabled={disabled}
-    style={{
-      backgroundColor: disabled ? '#9ca3af' : style?.backgroundColor || '#2563eb',
-      color: 'white',
-      padding: '10px 16px',
-      borderRadius: '6px',
-      border: 'none',
-      cursor: disabled ? 'not-allowed' : 'pointer',
-      fontSize: '14px',
-      fontWeight: '500',
-      ...style
-    }}
-    {...props}
-  >
-    {children}
-  </button>
-)
-
-const Card = ({ children, style }: any) => (
-  <div style={{
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    ...style
-  }}>
-    {children}
-  </div>
-)
-
-const Input = ({ type = 'text', value, onChange, placeholder, style, ...props }: any) => (
-  <input
-    type={type}
-    value={value}
-    onChange={onChange}
-    placeholder={placeholder}
-    style={{
-      width: '100%',
-      padding: '8px 12px',
-      border: '1px solid #d1d5db',
-      borderRadius: '6px',
-      fontSize: '14px',
-      outline: 'none',
-      ...style
-    }}
-    {...props}
-  />
-)
-
-const Select = ({ value, onChange, children, style, ...props }: any) => (
-  <select
-    value={value}
-    onChange={onChange}
-    style={{
-      width: '100%',
-      padding: '8px 12px',
-      border: '1px solid #d1d5db',
-      borderRadius: '6px',
-      fontSize: '14px',
-      backgroundColor: 'white',
-      outline: 'none',
-      ...style
-    }}
-    {...props}
-  >
-    {children}
-  </select>
-)
-
-const Textarea = ({ value, onChange, placeholder, rows = 3, style, ...props }: any) => (
-  <textarea
-    value={value}
-    onChange={onChange}
-    placeholder={placeholder}
-    rows={rows}
-    style={{
-      width: '100%',
-      padding: '8px 12px',
-      border: '1px solid #d1d5db',
-      borderRadius: '6px',
-      fontSize: '14px',
-      outline: 'none',
-      resize: 'vertical',
-      fontFamily: 'inherit',
-      ...style
-    }}
-    {...props}
-  />
-)
+  const todayNice = new Date().toLocaleDateString('sr-RS', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div style={{ minHeight: '100vh', background: '#f9fafb' }}>
       {/* Header */}
-      <div style={{
-        backgroundColor: 'white',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        borderBottom: '1px solid #e5e7eb'
-      }}>
-        <div style={{
-          maxWidth: '1152px',
-          margin: '0 auto',
-          padding: '16px'
-        }}>
-          <h1 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#111827',
-            margin: '0 0 4px 0'
-          }}>
-            Pirotske Vesti - Newsroom Tracker
-          </h1>
-          <p style={{ color: '#6b7280', margin: 0 }}>{todayFormatted}</p>
+      <Card style={{ border: 'none', borderRadius: 0 }}>
+        <div style={{ maxWidth: 1152, margin: '0 auto', padding: 16 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Pirotske Vesti – Newsroom Tracker</h1>
+          <p style={{ color: '#6b7280', margin: 0 }}>{todayNice}</p>
         </div>
-      </div>
+      </Card>
 
       {/* Navigation */}
-      <div style={{
-        maxWidth: '1152px',
-        margin: '0 auto',
-        padding: '16px'
-      }}>
+      <div style={{ maxWidth: 1152, margin: '0 auto', padding: 16 }}>
         <div style={{
-          display: 'flex',
-          gap: '4px',
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          padding: '4px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          display: 'flex', gap: 4, background: 'white', borderRadius: 8, padding: 4,
+          boxShadow: '0 1px 3px rgba(0,0,0,.1)'
         }}>
           {[
-            { id: 'dashboard', label: 'Dashboard', icon: Users },
-            { id: 'add-task', label: 'Dodaj rad', icon: Plus },
-            { id: 'calendar', label: 'Kalendar', icon: Calendar },
-            { id: 'ideas', label: 'Bank ideja', icon: Lightbulb }
-          ].map(tab => {
-            const Icon = tab.icon
+            { id: 'dashboard', label: 'Dashboard',     icon: Users },
+            { id: 'add-task',  label: 'Dodaj rad',     icon: Plus },
+            { id: 'calendar',  label: 'Kalendar',      icon: Calendar },
+            { id: 'ideas',     label: 'Bank ideja',    icon: Lightbulb }
+          ].map(t => {
+            const Icon = t.icon
+            const active = activeTab === t.id
             return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+              <button key={t.id}
+                onClick={() => setActiveTab(t.id as any)}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  transition: 'all 0.2s',
-                  backgroundColor: activeTab === tab.id ? '#dbeafe' : 'transparent',
-                  color: activeTab === tab.id ? '#1d4ed8' : '#6b7280'
-                }}
-                onMouseOver={(e: any) => {
-                  if (activeTab !== tab.id) {
-                    e.target.style.backgroundColor = '#f3f4f6'
-                    e.target.style.color = '#111827'
-                  }
-                }}
-                onMouseOut={(e: any) => {
-                  if (activeTab !== tab.id) {
-                    e.target.style.backgroundColor = 'transparent'
-                    e.target.style.color = '#6b7280'
-                  }
-                }}
-              >
-                <Icon size={18} />
-                <span>{tab.label}</span>
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px',
+                  borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 14,
+                  background: active ? '#dbeafe' : 'transparent', color: active ? '#1d4ed8' : '#6b7280'
+                }}>
+                <Icon size={18} /><span>{t.label}</span>
               </button>
             )
           })}
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{
-        maxWidth: '1152px',
-        margin: '0 auto',
-        padding: '0 16px 32px'
-      }}>
+      {/* ---------- GLAVNI SADRŽAJ ---------- */}
+      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 16px 32px' }}>
+
+        {/* DASHBOARD --------------------------------------------------- */}
         {activeTab === 'dashboard' && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isLargeScreen ? '1fr 1fr' : '1fr',
-            gap: '24px'
+            gridTemplateColumns: isLarge ? '1fr 1fr' : '1fr',
+            gap: 24
           }}>
-            {/* Today's Work */}
+            {/* Danas urađeno */}
             <Card>
-              <div style={{ padding: '24px' }}>
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginBottom: '16px'
-                }}>
-                  <Clock style={{ marginRight: '8px' }} size={20} />
-                  Danas urađeno ({todaysTasks.length})
+              <div style={{ padding: 24 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
+                  <Clock size={20} style={{ marginRight: 8 }} /> Danas urađeno ({todaysTasks.length})
                 </h2>
-                {todaysTasks.length > 0 ? (
-                  <div>
-                    {todaysTasks.map(task => (
-                      <TaskCard key={task.id} task={task} />
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{
-                    color: '#6b7280',
-                    textAlign: 'center',
-                    padding: '32px 0'
-                  }}>
-                    Još nema unetih radova za danas
-                  </p>
-                )}
+                {todaysTasks.length
+                  ? todaysTasks.map(t => <TaskCard key={t.id} task={t} />)
+                  : <p style={{ textAlign: 'center', color: '#6b7280', padding: '32px 0' }}>Još nema unetih radova</p>}
               </div>
             </Card>
 
-            {/* Upcoming Events */}
+            {/* Predstojeći događaji */}
             <Card>
-              <div style={{ padding: '24px' }}>
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginBottom: '16px'
-                }}>
-                  <Calendar style={{ marginRight: '8px' }} size={20} />
-                  Predstojeći događaji
+              <div style={{ padding: 24 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
+                  <Calendar size={20} style={{ marginRight: 8 }} /> Predstojeći događaji
                 </h2>
-                {upcomingEvents.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {upcomingEvents.map(event => (
-                      <div key={event.id} style={{
-                        borderLeft: '4px solid #3b82f6',
-                        paddingLeft: '16px',
-                        paddingTop: '8px',
-                        paddingBottom: '8px',
-                        position: 'relative'
-                      }}>
-                        {/* Delete button za događaje */}
-                        <button
-                          onClick={() => deleteEvent(event.id)}
-                          disabled={loading}
-                          style={{
-                            position: 'absolute',
-                            top: '4px',
-                            right: '4px',
-                            background: '#ef4444',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            padding: '4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            opacity: 0.7,
-                            transition: 'opacity 0.2s'
-                          }}
-                          onMouseOver={(e: any) => e.target.style.opacity = '1'}
-                          onMouseOut={(e: any) => e.target.style.opacity = '0.7'}
-                          title="Obriši događaj"
-                        >
+                {upcomingEvents.length
+                  ? upcomingEvents.map(e => (
+                      <div key={e.id} style={{ borderLeft: '4px solid #3b82f6', paddingLeft: 16, marginBottom: 12, position: 'relative' }}>
+                        <button onClick={() => delEvent(e.id)} disabled={loading}
+                          style={{ position: 'absolute', top: 4, right: 4, background: '#ef4444', border: 'none',
+                                   borderRadius: 4, padding: 4, color: 'white', cursor: 'pointer', opacity: .7 }}>
                           <Trash2 size={12} />
                         </button>
-
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          paddingRight: '24px'
-                        }}>
-                          <h3 style={{ fontWeight: '500', margin: 0 }}>{event.title}</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <strong>{e.title}</strong>
                           <span style={{
-                            fontSize: '12px',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            backgroundColor: event.priority === 'HIGH' ? '#fecaca' : 
-                                           event.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
-                            color: event.priority === 'HIGH' ? '#991b1b' : 
-                                   event.priority === 'MEDIUM' ? '#d97706' : '#166534'
-                          }}>
-                            {getPriorityLabel(event.priority)}
-                          </span>
+                            fontSize: 12, padding: '2px 6px', borderRadius: 4,
+                            background: e.priority === 'HIGH' ? '#fecaca'
+                                     : e.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
+                            color: e.priority === 'HIGH' ? '#991b1b'
+                                 : e.priority === 'MEDIUM' ? '#d97706' : '#166534'
+                          }}>{getPrio(e.priority)}</span>
                         </div>
-                        <p style={{
-                          fontSize: '14px',
-                          color: '#6b7280',
-                          margin: '4px 0'
-                        }}>
-                          📅 {new Date(event.date).toLocaleDateString('sr-RS')}
-                          {event.time && ` u ${event.time}`}
-                        </p>
-                        <p style={{
-                          fontSize: '14px',
-                          color: '#3b82f6',
-                          margin: 0
-                        }}>
-                          👤 {event.user.name}
-                        </p>
+                        <small style={{ color: '#6b7280' }}>
+                          📅 {new Date(e.date).toLocaleDateString('sr-RS')}{e.time && ` u ${e.time}`}
+                        </small>
+                        <div style={{ color: '#3b82f6', fontSize: 14 }}>👤 {e.user.name}</div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{
-                    color: '#6b7280',
-                    textAlign: 'center',
-                    padding: '32px 0'
-                  }}>
-                    Nema zakazanih događaja
-                  </p>
-                )}
+                    ))
+                  : <p style={{ textAlign: 'center', color: '#6b7280', padding: '32px 0' }}>Nema zakazanih događaja</p>}
               </div>
             </Card>
-
-            {/* Team History */}
-            <div style={{ gridColumn: isLargeScreen ? 'span 2' : 'span 1' }}>
-              <Card>
-                <div style={{ padding: '24px' }}>
-                  <h2 style={{
-                    fontSize: '20px',
-                    fontWeight: '600',
-                    marginBottom: '16px'
-                  }}>
-                    Istorija rada tima
-                  </h2>
-                  {users.map(user => {
-                    const userTasks = tasks.filter(task => task.user.name === user.name)
-                    return (
-                      <div key={user.name} style={{ marginBottom: '24px' }}>
-                        <h3 style={{
-                          fontSize: '18px',
-                          fontWeight: '500',
-                          marginBottom: '12px',
-                          color: '#1d4ed8'
-                        }}>
-                          {user.name} ({userTasks.length})
-                        </h3>
-                        {userTasks.length > 0 ? (
-                          <div>
-                            {userTasks.slice(0, 3).map(task => (
-                              <TaskCard key={task.id} task={task} />
-                            ))}
-                            {userTasks.length > 3 && (
-                              <p style={{
-                                fontSize: '14px',
-                                color: '#6b7280',
-                                textAlign: 'center'
-                              }}>
-                                ... i još {userTasks.length - 3} radova
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <p style={{
-                            color: '#6b7280',
-                            fontSize: '14px'
-                          }}>
-                            Nema unetih radova
-                          </p>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </Card>
-            </div>
           </div>
         )}
 
+        {/* DODAJ RAD --------------------------------------------------- */}
+        {activeTab === 'add-task' && (
+          <Card style={{ maxWidth: 512, margin: '0 auto' }}>
+            <div style={{ padding: 24 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Dodaj rad</h2>
 
-{activeTab === 'add-task' && (
-          <Card style={{ maxWidth: '512px' }}>
-            <div style={{ padding: '24px' }}>
-              <h2 style={{
-                fontSize: '20px',
-                fontWeight: '600',
-                marginBottom: '24px'
-              }}>
-                Dodaj rad
-              </h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '16px'
-                }}>
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#374151',
-                      marginBottom: '8px'
-                    }}>
-                      Osoba
-                    </label>
-                    <Select 
-                      value={taskForm.userId}
-                      onChange={(e: any) => setTaskForm({...taskForm, userId: e.target.value})}
-                    >
-                      {users.map(user => (
-                        <option key={user.name} value={user.name}>{user.name}</option>
-                      ))}
-                    </Select>
-                  </div>
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#374151',
-                      marginBottom: '8px'
-                    }}>
-                      Kategorija
-                    </label>
-                    <Select 
-                      value={taskForm.category}
-                      onChange={(e: any) => setTaskForm({...taskForm, category: e.target.value})}
-                    >
-                      {categories.map(cat => (
-                        <option key={cat.value} value={cat.value}>{cat.label}</option>
-                      ))}
-                    </Select>
-                  </div>
-                </div>
-
+              {/* Osoba & Kategorija */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#374151',
-                    marginBottom: '8px'
-                  }}>
-                    Opis rada
-                  </label>
-                  <Textarea
-                    value={taskForm.description}
-                    onChange={(e: any) => setTaskForm({...taskForm, description: e.target.value})}
-                    placeholder="Kratko opišite šta je urađeno..."
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#374151',
-                    marginBottom: '8px'
-                  }}>
-                    Link (opcionalno)
-                  </label>
-                  <Input
-                    type="url"
-                    value={taskForm.link}
-                    onChange={(e: any) => setTaskForm({...taskForm, link: e.target.value})}
-                    placeholder="https://..."
-                  />
-                </div>
-
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#374151',
-                    marginBottom: '8px'
-                  }}>
-                    Status
-                  </label>
-                  <Select 
-                    value={taskForm.status}
-                    onChange={(e: any) => setTaskForm({...taskForm, status: e.target.value})}
-                  >
-                    {statuses.map(status => (
-                      <option key={status.value} value={status.value}>{status.label}</option>
-                    ))}
+                  <label>Osoba</label>
+                  <Select value={taskForm.userId}
+                          onChange={(e: any) => setTaskForm({ ...taskForm, userId: e.target.value })}>
+                    {users.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}
                   </Select>
                 </div>
-
                 <div>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: '#374151',
-                    marginBottom: '8px'
-                  }}>
-                    Beleške (opcionalno)
-                  </label>
-                  <Textarea
-                    value={taskForm.notes}
-                    onChange={(e: any) => setTaskForm({...taskForm, notes: e.target.value})}
-                    placeholder="Dodatne napomene, izazovi, uspesi..."
-                    rows={2}
-                  />
+                  <label>Kategorija</label>
+                  <Select value={taskForm.category}
+                          onChange={(e: any) => setTaskForm({ ...taskForm, category: e.target.value })}>
+                    {categories.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </Select>
                 </div>
-
-                <Button
-                  onClick={addTask}
-                  disabled={loading}
-                  style={{ width: '100%' }}
-                >
-                  {loading ? 'Dodajem...' : 'Dodaj rad'}
-                </Button>
               </div>
+
+              {/* Opis */}
+              <div style={{ marginTop: 16 }}>
+                <label>Opis rada (opciono)</label>
+                <Textarea value={taskForm.description}
+                          onChange={(e: any) => setTaskForm({ ...taskForm, description: e.target.value })} />
+              </div>
+
+              {/* Link */}
+              <div style={{ marginTop: 16 }}>
+                <label>Link (opciono)</label>
+                <Input type="url" value={taskForm.link}
+                       onChange={(e: any) => setTaskForm({ ...taskForm, link: e.target.value })} />
+              </div>
+
+              {/* Status */}
+              <div style={{ marginTop: 16 }}>
+                <label>Status</label>
+                <Select value={taskForm.status}
+                        onChange={(e: any) => setTaskForm({ ...taskForm, status: e.target.value })}>
+                  {statuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </Select>
+              </div>
+
+              {/* Notes */}
+              <div style={{ marginTop: 16 }}>
+                <label>Beleške (opciono)</label>
+                <Textarea rows={2} value={taskForm.notes}
+                          onChange={(e: any) => setTaskForm({ ...taskForm, notes: e.target.value })} />
+              </div>
+
+              <Button onClick={addTask} disabled={loading} style={{ width: '100%', marginTop: 24 }}>
+                {loading ? 'Dodajem…' : 'Dodaj rad'}
+              </Button>
             </div>
           </Card>
         )}
 
+        {/* KALENDAR --------------------------------------------------- */}
         {activeTab === 'calendar' && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isLargeScreen ? '1fr 1fr' : '1fr',
-            gap: '24px'
+            gridTemplateColumns: isLarge ? '1fr 1fr' : '1fr',
+            gap: 24
           }}>
-            {/* Add Event Form */}
+            {/* Forma */}
             <Card>
-              <div style={{ padding: '24px' }}>
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: '600',
-                  marginBottom: '24px'
-                }}>
-                  Dodaj događaj
-                </h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ padding: 24 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Dodaj događaj</h2>
+
+                <label>Naziv</label>
+                <Input value={eventForm.title}
+                       onChange={(e: any) => setEventForm({ ...eventForm, title: e.target.value })} />
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
                   <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#374151',
-                      marginBottom: '8px'
-                    }}>
-                      Naziv događaja
-                    </label>
-                    <Input
-                      value={eventForm.title}
-                      onChange={(e: any) => setEventForm({...eventForm, title: e.target.value})}
-                      placeholder="Intervju, konferencija, rok..."
-                    />
+                    <label>Datum</label>
+                    <Input type="date" value={eventForm.date}
+                           onChange={(e: any) => setEventForm({ ...eventForm, date: e.target.value })} />
                   </div>
-
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '16px'
-                  }}>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        Datum
-                      </label>
-                      <Input
-                        type="date"
-                        value={eventForm.date}
-                        onChange={(e: any) => setEventForm({...eventForm, date: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        Vreme
-                      </label>
-                      <Input
-                        type="time"
-                        value={eventForm.time}
-                        onChange={(e: any) => setEventForm({...eventForm, time: e.target.value})}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '16px'
-                  }}>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        Prioritet
-                      </label>
-                      <Select 
-                        value={eventForm.priority}
-                        onChange={(e: any) => setEventForm({...eventForm, priority: e.target.value})}
-                      >
-                        {priorities.map(priority => (
-                          <option key={priority.value} value={priority.value}>{priority.label}</option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        Odgovorna osoba
-                      </label>
-                      <Select 
-                        value={eventForm.userId}
-                        onChange={(e: any) => setEventForm({...eventForm, userId: e.target.value})}
-                      >
-                        {users.map(user => (
-                          <option key={user.name} value={user.name}>{user.name}</option>
-                        ))}
-                      </Select>
-                    </div>
-                  </div>
-
                   <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#374151',
-                      marginBottom: '8px'
-                    }}>
-                      Napomene
-                    </label>
-                    <Textarea
-                      value={eventForm.notes}
-                      onChange={(e: any) => setEventForm({...eventForm, notes: e.target.value})}
-                      placeholder="Adresa, kontakt, priprema..."
-                      rows={3}
-                    />
+                    <label>Vreme</label>
+                    <Input type="time" value={eventForm.time}
+                           onChange={(e: any) => setEventForm({ ...eventForm, time: e.target.value })} />
                   </div>
-
-                  <Button
-                    onClick={addEvent}
-                    disabled={loading}
-                    style={{ 
-                      width: '100%',
-                      backgroundColor: '#16a34a'
-                    }}
-                  >
-                    {loading ? 'Dodajem...' : 'Dodaj događaj'}
-                  </Button>
                 </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+                  <div>
+                    <label>Prioritet</label>
+                    <Select value={eventForm.priority}
+                            onChange={(e: any) => setEventForm({ ...eventForm, priority: e.target.value })}>
+                      {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                    </Select>
+                  </div>
+                  <div>
+                    <label>Odgovorna osoba</label>
+                    <Select value={eventForm.userId}
+                            onChange={(e: any) => setEventForm({ ...eventForm, userId: e.target.value })}>
+                      {users.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}
+                    </Select>
+                  </div>
+                </div>
+
+                <label style={{ marginTop: 16, display: 'block' }}>Napomene</label>
+                <Textarea rows={3} value={eventForm.notes}
+                          onChange={(e: any) => setEventForm({ ...eventForm, notes: e.target.value })} />
+
+                <Button style={{ width: '100%', background: '#16a34a', marginTop: 24 }}
+                        onClick={addEvent} disabled={loading}>
+                  {loading ? 'Dodajem…' : 'Dodaj događaj'}
+                </Button>
               </div>
             </Card>
 
-            {/* Events List */}
+            {/* Lista */}
             <Card>
-              <div style={{ padding: '24px' }}>
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: '600',
-                  marginBottom: '24px'
-                }}>
-                  Kalendar događaja
-                </h2>
-                {events.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {events.slice(0, 10).map(event => (
-                      <div key={event.id} style={{
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        padding: '16px',
-                        position: 'relative'
-                      }}>
-                        {/* Delete button za događaje u listi */}
-                        <button
-                          onClick={() => deleteEvent(event.id)}
-                          disabled={loading}
-                          style={{
-                            position: 'absolute',
-                            top: '8px',
-                            right: '8px',
-                            background: '#ef4444',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            padding: '4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            opacity: 0.7,
-                            transition: 'opacity 0.2s'
-                          }}
-                          onMouseOver={(e: any) => e.target.style.opacity = '1'}
-                          onMouseOut={(e: any) => e.target.style.opacity = '0.7'}
-                          title="Obriši događaj"
-                        >
+              <div style={{ padding: 24 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Kalendar događaja</h2>
+                {events.length
+                  ? events.map(e => (
+                      <div key={e.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, position: 'relative', marginBottom: 16 }}>
+                        <button onClick={() => delEvent(e.id)} disabled={loading}
+                          style={{ position: 'absolute', top: 8, right: 8, background: '#ef4444',
+                                   border: 'none', borderRadius: 4, padding: 4, color: 'white', cursor: 'pointer', opacity: .7 }}>
                           <Trash2 size={12} />
                         </button>
-
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          marginBottom: '8px',
-                          paddingRight: '24px'
-                        }}>
-                          <h3 style={{ fontWeight: '500', margin: 0 }}>{event.title}</h3>
-                          <span style={{
-                            fontSize: '12px',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            backgroundColor: event.priority === 'HIGH' ? '#fecaca' : 
-                                           event.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
-                            color: event.priority === 'HIGH' ? '#991b1b' : 
-                                   event.priority === 'MEDIUM' ? '#d97706' : '#166534'
-                          }}>
-                            {getPriorityLabel(event.priority)}
-                          </span>
+                        <strong>{e.title}</strong>
+                        <div style={{ fontSize: 12, color: '#6b7280', margin: '4px 0' }}>
+                          📅 {new Date(e.date).toLocaleDateString('sr-RS')}{e.time && ` u ${e.time}`}
                         </div>
-                        <p style={{
-                          fontSize: '14px',
-                          color: '#6b7280',
-                          margin: '4px 0'
-                        }}>
-                          📅 {new Date(event.date).toLocaleDateString('sr-RS')}
-                          {event.time && ` u ${event.time}`}
-                        </p>
-                        <p style={{
-                          fontSize: '14px',
-                          color: '#3b82f6',
-                          marginBottom: '8px'
-                        }}>
-                          👤 {event.user.name}
-                        </p>
-                        {event.notes && (
-                          <p style={{
-                            fontSize: '14px',
-                            color: '#6b7280',
-                            backgroundColor: '#f9fafb',
-                            padding: '8px',
-                            borderRadius: '4px',
-                            margin: 0
-                          }}>
-                            {event.notes}
-                          </p>
-                        )}
+                        <div style={{ fontSize: 12, color: '#3b82f6' }}>👤 {e.user.name}</div>
+                        {e.notes && <p style={{ fontSize: 14, background: '#f9fafb', padding: 8, borderRadius: 4 }}>{e.notes}</p>}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{
-                    color: '#6b7280',
-                    textAlign: 'center',
-                    padding: '32px 0'
-                  }}>
-                    Nema zakazanih događaja
-                  </p>
-                )}
+                    ))
+                  : <p style={{ textAlign: 'center', color: '#6b7280', padding: '32px 0' }}>Nema događaja</p>}
               </div>
             </Card>
           </div>
         )}
 
+        {/* IDEAS ------------------------------------------------------ */}
         {activeTab === 'ideas' && (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isLargeScreen ? '1fr 1fr' : '1fr',
-            gap: '24px'
+            gridTemplateColumns: isLarge ? '1fr 1fr' : '1fr',
+            gap: 24
           }}>
-            {/* Add Idea Form */}
+            {/* Forma */}
             <Card>
-              <div style={{ padding: '24px' }}>
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: '600',
-                  marginBottom: '24px'
-                }}>
-                  Dodaj ideju
-                </h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ padding: 24 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Dodaj ideju</h2>
+
+                <label>Naslov</label>
+                <Input value={ideaForm.title}
+                       onChange={(e: any) => setIdeaForm({ ...ideaForm, title: e.target.value })} />
+
+                <label style={{ marginTop: 16 }}>Opis</label>
+                <Textarea rows={4} value={ideaForm.description}
+                          onChange={(e: any) => setIdeaForm({ ...ideaForm, description: e.target.value })} />
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
                   <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#374151',
-                      marginBottom: '8px'
-                    }}>
-                      Naslov
-                    </label>
-                    <Input
-                      value={ideaForm.title}
-                      onChange={(e: any) => setIdeaForm({...ideaForm, title: e.target.value})}
-                      placeholder="Kratko opisati ideju..."
-                    />
+                    <label>Prioritet</label>
+                    <Select value={ideaForm.priority}
+                            onChange={(e: any) => setIdeaForm({ ...ideaForm, priority: e.target.value })}>
+                      {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                    </Select>
                   </div>
-
                   <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: '#374151',
-                      marginBottom: '8px'
-                    }}>
-                      Opis
-                    </label>
-                    <Textarea
-                      value={ideaForm.description}
-                      onChange={(e: any) => setIdeaForm({...ideaForm, description: e.target.value})}
-                      placeholder="Detaljan opis, kontakti, izvori..."
-                      rows={4}
-                    />
+                    <label>Predložio</label>
+                    <Select value={ideaForm.userId}
+                            onChange={(e: any) => setIdeaForm({ ...ideaForm, userId: e.target.value })}>
+                      {users.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}
+                    </Select>
                   </div>
-
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '16px'
-                  }}>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        Prioritet
-                      </label>
-                      <Select 
-                        value={ideaForm.priority}
-                        onChange={(e: any) => setIdeaForm({...ideaForm, priority: e.target.value})}
-                      >
-                        {priorities.map(priority => (
-                          <option key={priority.value} value={priority.value}>{priority.label}</option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        color: '#374151',
-                        marginBottom: '8px'
-                      }}>
-                        Predložio
-                      </label>
-                      <Select 
-                        value={ideaForm.userId}
-                        onChange={(e: any) => setIdeaForm({...ideaForm, userId: e.target.value})}
-                      >
-                        {users.map(user => (
-                          <option key={user.name} value={user.name}>{user.name}</option>
-                        ))}
-                      </Select>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={addIdea}
-                    disabled={loading}
-                    style={{ 
-                      width: '100%',
-                      backgroundColor: '#9333ea'
-                    }}
-                  >
-                    {loading ? 'Dodajem...' : 'Sačuvaj ideju'}
-                  </Button>
                 </div>
+
+                <Button style={{ width: '100%', background: '#9333ea', marginTop: 24 }}
+                        onClick={addIdea} disabled={loading}>
+                  {loading ? 'Dodajem…' : 'Sačuvaj ideju'}
+                </Button>
               </div>
             </Card>
 
-            {/* Ideas List */}
+            {/* Lista */}
             <Card>
-              <div style={{ padding: '24px' }}>
-                <h2 style={{
-                  fontSize: '20px',
-                  fontWeight: '600',
-                  marginBottom: '24px'
-                }}>
-                  Bank ideja ({ideas.length})
-                </h2>
-                {ideas.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {ideas.slice(0, 10).map(idea => (
-                      <div key={idea.id} style={{
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        padding: '16px',
-                        position: 'relative'
-                      }}>
-                        {/* Delete button za ideje */}
-                        <button
-                          onClick={() => deleteIdea(idea.id)}
-                          disabled={loading}
-                          style={{
-                            position: 'absolute',
-                            top: '8px',
-                            right: '8px',
-                            background: '#ef4444',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            padding: '4px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            opacity: 0.7,
-                            transition: 'opacity 0.2s'
-                          }}
-                          onMouseOver={(e: any) => e.target.style.opacity = '1'}
-                          onMouseOut={(e: any) => e.target.style.opacity = '0.7'}
-                          title="Obriši ideju"
-                        >
+              <div style={{ padding: 24 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Bank ideja ({ideas.length})</h2>
+                {ideas.length
+                  ? ideas.map(i => (
+                      <div key={i.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16, position: 'relative', marginBottom: 16 }}>
+                        <button onClick={() => delIdea(i.id)} disabled={loading}
+                          style={{ position: 'absolute', top: 8, right: 8, background: '#ef4444',
+                                   border: 'none', borderRadius: 4, padding: 4, color: 'white', cursor: 'pointer', opacity: .7 }}>
                           <Trash2 size={12} />
                         </button>
-
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          marginBottom: '8px',
-                          paddingRight: '24px'
-                        }}>
-                          <h3 style={{ fontWeight: '500', margin: 0 }}>{idea.title}</h3>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <span style={{
-                              fontSize: '12px',
-                              backgroundColor: '#e879f9',
-                              color: '#581c87',
-                              padding: '2px 6px',
-                              borderRadius: '4px'
-                            }}>
-                              {idea.category}
-                            </span>
-                            <span style={{
-                              fontSize: '12px',
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              backgroundColor: idea.priority === 'HIGH' ? '#fecaca' : 
-                                             idea.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
-                              color: idea.priority === 'HIGH' ? '#991b1b' : 
-                                     idea.priority === 'MEDIUM' ? '#d97706' : '#166534'
-                            }}>
-                              {getPriorityLabel(idea.priority)}
-                            </span>
-                          </div>
+                        <strong>{i.title}</strong>
+                        <div style={{ display: 'flex', gap: 8, margin: '4px 0' }}>
+                          <span style={{ background: '#e879f9', color: '#581c87', padding: '2px 6px', borderRadius: 4, fontSize: 12 }}>{i.category}</span>
+                          <span style={{
+                            background: i.priority === 'HIGH' ? '#fecaca' : i.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
+                            color:     i.priority === 'HIGH' ? '#991b1b' : i.priority === 'MEDIUM' ? '#d97706' : '#166534',
+                            padding: '2px 6px', borderRadius: 4, fontSize: 12
+                          }}>{getPrio(i.priority)}</span>
                         </div>
-                        {idea.description && (
-                          <p style={{
-                            fontSize: '14px',
-                            color: '#6b7280',
-                            marginBottom: '8px'
-                          }}>
-                            {idea.description}
-                          </p>
-                        )}
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
-                        }}>
-                          <p style={{
-                            fontSize: '12px',
-                            color: '#9ca3af',
-                            margin: 0
-                          }}>
-                            Dodao: {idea.user.name}
-                          </p>
-                          <p style={{
-                            fontSize: '12px',
-                            color: '#9ca3af',
-                            margin: 0
-                          }}>
-                            {new Date(idea.createdAt).toLocaleDateString('sr-RS')}
-                          </p>
-                        </div>
+                        {i.description && <p style={{ fontSize: 14, color: '#6b7280' }}>{i.description}</p>}
+                        <small style={{ color: '#9ca3af' }}>Dodao: {i.user.name} · {new Date(i.createdAt).toLocaleDateString('sr-RS')}</small>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p style={{
-                    color: '#6b7280',
-                    textAlign: 'center',
-                    padding: '32px 0'
-                  }}>
-                    Nema sačuvanih ideja
-                  </p>
-                )}
+                    ))
+                  : <p style={{ textAlign: 'center', color: '#6b7280', padding: '32px 0' }}>Nema sačuvanih ideja</p>}
               </div>
             </Card>
           </div>
         )}
+
       </div>
     </div>
   )
