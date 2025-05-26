@@ -458,12 +458,14 @@ export default function NewsroomTracker() {
 
   // Dodajte ove komponente PRE glavne NewsroomTracker funkcije
 
+// Najjednostavnije rešenje - bez hover efekata
+
 const Button = ({ children, onClick, disabled, style, ...props }: any) => (
   <button
     onClick={onClick}
     disabled={disabled}
     style={{
-      backgroundColor: disabled ? '#9ca3af' : '#2563eb',
+      backgroundColor: disabled ? '#9ca3af' : style?.backgroundColor || '#2563eb',
       color: 'white',
       padding: '10px 16px',
       borderRadius: '6px',
@@ -471,14 +473,7 @@ const Button = ({ children, onClick, disabled, style, ...props }: any) => (
       cursor: disabled ? 'not-allowed' : 'pointer',
       fontSize: '14px',
       fontWeight: '500',
-      transition: 'background-color 0.2s',
       ...style
-    }}
-    onMouseOver={(e: any) => {
-      if (!disabled) e.target.style.backgroundColor = style?.backgroundColor === '#16a34a' ? '#15803d' : style?.backgroundColor === '#9333ea' ? '#7c3aed' : '#1d4ed8'
-    }}
-    onMouseOut={(e: any) => {
-      if (!disabled) e.target.style.backgroundColor = style?.backgroundColor === '#16a34a' ? '#16a34a' : style?.backgroundColor === '#9333ea' ? '#9333ea' : '#2563eb'
     }}
     {...props}
   >
