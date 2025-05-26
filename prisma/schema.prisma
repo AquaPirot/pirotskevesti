@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id   String @id @default(cuid())
+  name String // "Novinar", "Snimatelj", "Saradnik", "Agencija"
+  
+  tasks  Task[]
+  events Event[]
+  ideas  Idea[]
+  
+  @@map("users")
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  description String
+  link        String?
+  category    Category
+  status      TaskStatus @default(IN_PROGRESS)
+  notes       String?
+  date        DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tasks")
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  title     String
+  date      DateTime
+  time      String?
+  priority  Priority @default(MEDIUM)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("events")
+}
+
+model Idea {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  priority    Priority @default(MEDIUM)
+  category    String   @default("Priča")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ideas")
+}
+
+enum Category {
+  ARTICLE
+  VIDEO
+  INTERVIEW
+  RESEARCH
+  EDITING
+  SOCIAL_MEDIA
+  OTHER
+}
+
+enum TaskStatus {
+  IN_PROGRESS
+  COMPLETED
+  PUBLISHED
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
