@@ -129,6 +129,7 @@ export default function NewsroomTracker() {
   const [ideas,  setIdeas]  = useState<Idea[]>([])
   const [loading, setLoading] = useState(false)
   const [isLarge, setIsLarge] = useState(true)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
 
   /* forme */
   const [taskForm, setTaskForm] = useState({
@@ -201,64 +202,31 @@ export default function NewsroomTracker() {
     } finally { setLoading(false) }
   }
 
-  /* Kalendar helper funkcije */
-  const getCurrentMonth = () => new Date().getMonth()
-  const getCurrentYear = () => new Date().getFullYear()
-  const [calendarMonth, setCalendarMonth] = useState(getCurrentMonth())
-  const [calendarYear, setCalendarYear] = useState(getCurrentYear())
-  const [calendarView, setCalendarView] = useState<'list' | 'month'>('list')
-
-  const getDaysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate()
-  const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay()
-  
-  const getEventsForDate = (day: number, month: number, year: number) => {
-    const dateStr = new Date(year, month, day).toISOString().split('T')[0]
-    return events.filter(e => e.date.split('T')[0] === dateStr)
-  }
-
-  const monthNames = [
-    'Јануар', 'Фебруар', 'Март', 'Април', 'Мај', 'Јун',
-    'Јул', 'Август', 'Септембар', 'Октобар', 'Новембар', 'Децембар'
-  ]
-
-  const prevMonth = () => {
-    if (calendarMonth === 0) {
-      setCalendarMonth(11)
-      setCalendarYear(calendarYear - 1)
-    } else {
-      setCalendarMonth(calendarMonth - 1)
-    }
-  }
-
-  const nextMonth = () => {
-    if (calendarMonth === 11) {
-      setCalendarMonth(0)
-      setCalendarYear(calendarYear + 1)
-    } else {
-      setCalendarMonth(calendarMonth + 1)
-    }
-  }
+  /* helpers */
   const todayISO = new Date().toISOString().split('T')[0]
   const todaysTasks = tasks.filter(t => new Date(t.date).toISOString().split('T')[0] === todayISO)
   const upcomingEvents = events
     .filter(e => {
-      const eventDate = new Date(e.date)
-      const today = new Date()
-      const next7Days = new Date()
-      next7Days.setDate(today.getDate() + 7)
-      
-      // Poređuj samo datume bez vremena
-      const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
-      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-      const next7DaysOnly = new Date(next7Days.getFullYear(), next7Days.getMonth(), next7Days.getDate())
-      
-      return eventDateOnly >= todayOnly && eventDateOnly <= next7DaysOnly
-    })
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sortiraj po datumu
-    .slice(0, 5)
+      const d = new Date(e.date); const now = new Date(); const next7 = new Date(); next7.setDate(next7.getDate() + 7)
+      return d >= now && d <= next7
+    }).slice(0, 5)
   const getCat = (v: string) => categories.find(c => c.value === v)?.label || v
   const getStat = (v: string) => statuses.find(s => s.value === v)?.label || v
   const getPrio = (v: string) => priorities.find(p => p.value === v)?.label || v
+  
+  // Kalendar helper funkcije
+  const currentDate = new Date()
+  const currentMonth = currentDate.getMonth()
+  const currentYear = currentDate.getFullYear()
+  
+  const getDaysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate()
+  const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay()
+  
+  const getEventsForDate = (dateStr: string) => {
+    return events.filter(e => e.date === dateStr)
+  }
+  
+  const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : []
 
   /* delete helpers (skraćeno) */
   const delTask  = async (id: string) => { if (!confirm('Obrisati rad?')) return; setLoading(true); try { await fetch(`/api/tasks/${id}`, { method: 'DELETE' }); await fetchTasks() } finally { setLoading(false) } }
@@ -732,220 +700,184 @@ export default function NewsroomTracker() {
                 </div>
               </Card>
 
-              {/* Lista */}
+              {/* Lista - sada sa mesečnim kalendarom */}
               <Card>
                 <div style={{ padding: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                    <h2 style={{ fontSize: 20, fontWeight: 600, margin: 0 }}>
-                      {calendarView === 'list' ? 'Predstojeći događaji' : 'Mesečni kalendar'}
-                    </h2>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        onClick={() => setCalendarView('list')}
-                        style={{
-                          background: calendarView === 'list' ? '#f59e0b' : '#e5e7eb',
-                          color: calendarView === 'list' ? 'white' : '#6b7280',
-                          border: 'none',
-                          padding: '6px 12px',
-                          borderRadius: 4,
-                          fontSize: 12,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Lista
-                      </button>
-                      <button
-                        onClick={() => setCalendarView('month')}
-                        style={{
-                          background: calendarView === 'month' ? '#f59e0b' : '#e5e7eb',
-                          color: calendarView === 'month' ? 'white' : '#6b7280',
-                          border: 'none',
-                          padding: '6px 12px',
-                          borderRadius: 4,
-                          fontSize: 12,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Mesec
-                      </button>
-                    </div>
+                  <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Mesečni kalendar</h2>
+                  
+                  {/* Header kalendara */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    marginBottom: 16 
+                  }}>
+                    <h3 style={{ margin: 0, fontSize: 18 }}>
+                      {new Date(currentYear, currentMonth).toLocaleDateString('sr-RS', { 
+                        month: 'long', 
+                        year: 'numeric' 
+                      })}
+                    </h3>
                   </div>
 
-                  {calendarView === 'month' && (
-                    <div>
-                      {/* Navigacija meseca */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <button onClick={prevMonth} style={{ background: '#6b7280', color: 'white', border: 'none', padding: '8px 12px', borderRadius: 4, cursor: 'pointer' }}>
-                          ←
-                        </button>
-                        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
-                          {monthNames[calendarMonth]} {calendarYear}
-                        </h3>
-                        <button onClick={nextMonth} style={{ background: '#6b7280', color: 'white', border: 'none', padding: '8px 12px', borderRadius: 4, cursor: 'pointer' }}>
-                          →
-                        </button>
-                      </div>
-
-                      {/* Kalendar grid */}
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(7, 1fr)', 
-                        gap: 1, 
-                        background: '#e5e7eb',
-                        borderRadius: 8,
-                        overflow: 'hidden'
+                  {/* Dani u nedelji */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(7, 1fr)', 
+                    gap: 1, 
+                    marginBottom: 8 
+                  }}>
+                    {['Ned', 'Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub'].map(day => (
+                      <div key={day} style={{ 
+                        padding: '8px 4px', 
+                        textAlign: 'center', 
+                        fontWeight: 600, 
+                        fontSize: 12,
+                        background: '#f3f4f6',
+                        color: '#374151'
                       }}>
-                        {/* Dani u nedelji */}
-                        {['Нед', 'Пон', 'Уто', 'Сре', 'Чет', 'Пет', 'Суб'].map(day => (
-                          <div key={day} style={{ 
-                            background: '#374151', 
-                            color: 'white', 
-                            padding: '8px 4px', 
-                            textAlign: 'center', 
-                            fontSize: 12, 
-                            fontWeight: 600 
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Kalendar grid */}
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(7, 1fr)', 
+                    gap: 1 
+                  }}>
+                    {/* Prazni dani na početku */}
+                    {Array.from({ length: getFirstDayOfMonth(currentMonth, currentYear) }, (_, i) => (
+                      <div key={`empty-${i}`} style={{ 
+                        minHeight: '50px', 
+                        background: '#f9fafb' 
+                      }} />
+                    ))}
+                    
+                    {/* Dani u mesecu */}
+                    {Array.from({ length: getDaysInMonth(currentMonth, currentYear) }, (_, i) => {
+                      const day = i + 1
+                      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                      const dayEvents = getEventsForDate(dateStr)
+                      const isToday = dateStr === todayISO
+                      const isSelected = dateStr === selectedDate
+                      
+                      return (
+                        <button
+                          key={day}
+                          onClick={() => setSelectedDate(dateStr)}
+                          style={{
+                            minHeight: '50px',
+                            padding: '4px',
+                            border: 'none',
+                            background: isSelected ? '#dbeafe' : isToday ? '#f0f9ff' : 'white',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'flex-start',
+                            fontSize: 14,
+                            borderRadius: 4
+                          }}
+                        >
+                          <span style={{ 
+                            fontWeight: isToday ? 600 : 400,
+                            color: isToday ? '#1d4ed8' : '#374151'
                           }}>
                             {day}
-                          </div>
-                        ))}
-
-                        {/* Prazna polja za početak meseca */}
-                        {Array.from({ length: getFirstDayOfMonth(calendarMonth, calendarYear) === 0 ? 6 : getFirstDayOfMonth(calendarMonth, calendarYear) - 1 }).map((_, i) => (
-                          <div key={`empty-${i}`} style={{ background: '#f9fafb', minHeight: 60 }} />
-                        ))}
-
-                        {/* Dani u mesecu */}
-                        {Array.from({ length: getDaysInMonth(calendarMonth, calendarYear) }).map((_, i) => {
-                          const day = i + 1
-                          const dayEvents = getEventsForDate(day, calendarMonth, calendarYear)
-                          const isToday = day === new Date().getDate() && 
-                                         calendarMonth === new Date().getMonth() && 
-                                         calendarYear === new Date().getFullYear()
-                          
-                          return (
-                            <div key={day} style={{ 
-                              background: 'white', 
-                              minHeight: 60, 
-                              padding: 4,
-                              border: isToday ? '2px solid #f59e0b' : 'none',
-                              position: 'relative'
+                          </span>
+                          {dayEvents.length > 0 && (
+                            <div style={{
+                              background: '#ef4444',
+                              color: 'white',
+                              borderRadius: '50%',
+                              width: '16px',
+                              height: '16px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 10,
+                              fontWeight: 600,
+                              marginTop: '2px'
                             }}>
-                              <div style={{ 
-                                fontSize: 14, 
-                                fontWeight: isToday ? 600 : 400,
-                                color: isToday ? '#f59e0b' : '#374151',
-                                marginBottom: 2
-                              }}>
-                                {day}
-                              </div>
-                              {dayEvents.slice(0, 2).map((event, idx) => (
-                                <div key={event.id} style={{
-                                  background: event.priority === 'HIGH' ? '#fecaca' : event.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
-                                  color: event.priority === 'HIGH' ? '#991b1b' : event.priority === 'MEDIUM' ? '#d97706' : '#166534',
-                                  fontSize: 10,
-                                  padding: '1px 3px',
-                                  borderRadius: 2,
-                                  marginBottom: 1,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}>
-                                  {event.time && `${event.time.substring(0, 5)} `}{event.title}
-                                </div>
-                              ))}
-                              {dayEvents.length > 2 && (
-                                <div style={{ fontSize: 9, color: '#6b7280', fontWeight: 600 }}>
-                                  +{dayEvents.length - 2} још
-                                </div>
-                              )}
+                              {dayEvents.length}
                             </div>
-                          )
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Detalji za selektovani dan */}
+                  {selectedDate && (
+                    <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid #e5e7eb' }}>
+                      <h4 style={{ 
+                        margin: '0 0 16px 0', 
+                        fontSize: 16,
+                        color: '#374151'
+                      }}>
+                        Događaji za {new Date(selectedDate).toLocaleDateString('sr-RS', { 
+                          weekday: 'long', 
+                          day: 'numeric', 
+                          month: 'long' 
                         })}
-                      </div>
-                    </div>
-                  )}
-
-                  {calendarView === 'list' && (
-                    <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
-                      {events.filter(e => {
-                        const eventDate = new Date(e.date);
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        return eventDate >= today;
-                      }).length
-                        ? events.filter(e => {
-                            const eventDate = new Date(e.date);
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            return eventDate >= today;
-                          }).map(e => (
-                            <div key={e.id} style={{ 
-                              border: '1px solid #e5e7eb', 
-                              borderRadius: 8, 
-                              padding: 16, 
-                              position: 'relative', 
-                              marginBottom: 16,
-                              paddingRight: 40,
-                              isolation: 'isolate',
-                              wordWrap: 'break-word',
-                              overflowWrap: 'break-word'
-                            }}>
-                              <button onClick={() => delEvent(e.id)} disabled={loading}
-                                style={{ 
-                                  position: 'absolute', 
-                                  top: 8, 
-                                  right: 8, 
-                                  background: '#ef4444',
-                                  border: 'none', 
-                                  borderRadius: 4, 
-                                  padding: 6, 
-                                  color: 'white', 
-                                  cursor: 'pointer', 
-                                  opacity: .8,
-                                  zIndex: 1,
-                                  width: 28,
-                                  height: 28,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  flexShrink: 0
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                              <strong style={{ display: 'block', marginBottom: 8, wordBreak: 'break-word' }}>{e.title}</strong>
-                              <div style={{ fontSize: 12, color: '#6b7280', margin: '4px 0' }}>
-                                📅 {new Date(e.date).toLocaleDateString('sr-RS', { 
-                                  weekday: 'long', 
-                                  day: 'numeric', 
-                                  month: 'long' 
-                                })}{e.time && ` u ${e.time}`}
+                      </h4>
+                      
+                      {selectedDateEvents.length > 0 ? (
+                        selectedDateEvents.map(e => (
+                          <div key={e.id} style={{ 
+                            border: '1px solid #e5e7eb', 
+                            borderRadius: 8, 
+                            padding: 12, 
+                            marginBottom: 12,
+                            position: 'relative',
+                            paddingRight: 40
+                          }}>
+                            <button onClick={() => delEvent(e.id)} disabled={loading}
+                              style={{ 
+                                position: 'absolute', 
+                                top: 8, 
+                                right: 8, 
+                                background: '#ef4444',
+                                border: 'none', 
+                                borderRadius: 4, 
+                                padding: 4, 
+                                color: 'white', 
+                                cursor: 'pointer',
+                                width: 24,
+                                height: 24,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                            <strong style={{ display: 'block', marginBottom: 4 }}>{e.title}</strong>
+                            {e.time && (
+                              <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
+                                🕐 {e.time}
                               </div>
-                              <div style={{ fontSize: 12, color: '#3b82f6', marginBottom: 8 }}>👤 {e.user.name}</div>
-                              <span style={{
-                                fontSize: 11, padding: '2px 6px', borderRadius: 4, marginBottom: 8, display: 'inline-block',
-                                background: e.priority === 'HIGH' ? '#fecaca'
-                                         : e.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
-                                color: e.priority === 'HIGH' ? '#991b1b'
-                                     : e.priority === 'MEDIUM' ? '#d97706' : '#166534'
-                              }}>{getPrio(e.priority)}</span>
-                              {e.notes && (
-                                <p style={{ 
-                                  fontSize: 14, 
-                                  background: '#f9fafb', 
-                                  padding: 8, 
-                                  borderRadius: 4,
-                                  lineHeight: 1.4,
-                                  wordBreak: 'break-word',
-                                  marginTop: 8,
-                                  color: '#6b7280'
-                                }}>{e.notes}</p>
-                              )}
-                            </div>
-                          ))
-                        : <p style={{ textAlign: 'center', color: '#6b7280', padding: '32px 0' }}>Nema predstojećih događaja</p>}
+                            )}
+                            <div style={{ fontSize: 12, color: '#3b82f6' }}>👤 {e.user.name}</div>
+                            {e.notes && (
+                              <p style={{ 
+                                fontSize: 12, 
+                                background: '#f9fafb', 
+                                padding: 6, 
+                                borderRadius: 4,
+                                marginTop: 8,
+                                color: '#6b7280',
+                                margin: '8px 0 0 0'
+                              }}>{e.notes}</p>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <p style={{ color: '#6b7280', fontSize: 14 }}>Nema događaja za ovaj dan</p>
+                      )}
                     </div>
                   )}
                 </div>
