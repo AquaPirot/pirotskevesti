@@ -207,11 +207,21 @@ export default function NewsroomTracker() {
   /* helpers */
   const todayISO = new Date().toISOString().split('T')[0]
   const todaysTasks = tasks.filter(t => new Date(t.date).toISOString().split('T')[0] === todayISO)
-  const upcomingEvents = events
-    .filter(e => {
-      const d = new Date(e.date); const now = new Date(); const next7 = new Date(); next7.setDate(next7.getDate() + 7)
-      return d >= now && d <= next7
+  
+  // Dinamički računaj predstojeće događaje
+  const getUpcomingEvents = () => {
+    const today = new Date()
+    const next7 = new Date()
+    today.setHours(0, 0, 0, 0)
+    next7.setDate(next7.getDate() + 7)
+    next7.setHours(23, 59, 59, 999)
+    
+    return events.filter(e => {
+      const eventDate = new Date(e.date)
+      return eventDate >= today && eventDate <= next7
     }).slice(0, 5)
+  }
+  
   const getCat = (v: string) => categories.find(c => c.value === v)?.label || v
   const getStat = (v: string) => statuses.find(s => s.value === v)?.label || v
   const getPrio = (v: string) => priorities.find(p => p.value === v)?.label || v
@@ -524,8 +534,8 @@ export default function NewsroomTracker() {
                   <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
                     <Calendar size={20} style={{ marginRight: 8 }} /> Predstojeći događaji
                   </h2>
-                  {upcomingEvents.length
-                    ? upcomingEvents.map(e => (
+                  {getUpcomingEvents().length > 0
+                    ? getUpcomingEvents().map(e => (
                           <div key={e.id} style={{ 
                           borderLeft: '4px solid #3b82f6', 
                           paddingLeft: 16, 
