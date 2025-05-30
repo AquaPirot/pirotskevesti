@@ -130,6 +130,8 @@ export default function NewsroomTracker() {
   const [loading, setLoading] = useState(false)
   const [isLarge, setIsLarge] = useState(true)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState(new Date().getMonth())
+  const [currentCalendarYear, setCurrentCalendarYear] = useState(new Date().getFullYear())
 
   /* forme */
   const [taskForm, setTaskForm] = useState({
@@ -207,12 +209,8 @@ export default function NewsroomTracker() {
   const todaysTasks = tasks.filter(t => new Date(t.date).toISOString().split('T')[0] === todayISO)
   const upcomingEvents = events
     .filter(e => {
-      const d = new Date(e.date); 
-      const now = new Date(); 
-      const next7 = new Date(); 
-      now.setHours(0, 0, 0, 0); // Resetuj na početak dana
-      next7.setDate(next7.getDate() + 7)
-      return d >= now && d <= next7 // Uključuje i današnje događaje
+      const d = new Date(e.date); const now = new Date(); const next7 = new Date(); next7.setDate(next7.getDate() + 7)
+      return d >= now && d <= next7
     }).slice(0, 5)
   const getCat = (v: string) => categories.find(c => c.value === v)?.label || v
   const getStat = (v: string) => statuses.find(s => s.value === v)?.label || v
@@ -227,14 +225,37 @@ export default function NewsroomTracker() {
   const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay()
   
   const getEventsForDate = (dateStr: string) => {
-    return events.filter(e => {
-      // Normalizuj datume za poređenje
-      const eventDate = new Date(e.date).toISOString().split('T')[0]
-      return eventDate === dateStr
-    })
+    return events.filter(e => e.date === dateStr)
   }
   
   const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : []
+  
+  // Navigacija kalendara
+  const goToPreviousMonth = () => {
+    if (currentCalendarMonth === 0) {
+      setCurrentCalendarMonth(11)
+      setCurrentCalendarYear(currentCalendarYear - 1)
+    } else {
+      setCurrentCalendarMonth(currentCalendarMonth - 1)
+    }
+    setSelectedDate(null) // Reset selected date
+  }
+  
+  const goToNextMonth = () => {
+    if (currentCalendarMonth === 11) {
+      setCurrentCalendarMonth(0)
+      setCurrentCalendarYear(currentCalendarYear + 1)
+    } else {
+      setCurrentCalendarMonth(currentCalendarMonth + 1)
+    }
+    setSelectedDate(null) // Reset selected date
+  }
+  
+  const goToCurrentMonth = () => {
+    setCurrentCalendarMonth(currentMonth)
+    setCurrentCalendarYear(currentYear)
+    setSelectedDate(null)
+  }
 
   /* delete helpers (skraćeno) */
   const delTask  = async (id: string) => { if (!confirm('Obrisati rad?')) return; setLoading(true); try { await fetch(`/api/tasks/${id}`, { method: 'DELETE' }); await fetchTasks() } finally { setLoading(false) } }
@@ -812,12 +833,59 @@ export default function NewsroomTracker() {
                       alignItems: 'center', 
                       marginBottom: 16 
                     }}>
-                      <h4 style={{ margin: 0, fontSize: 16, color: '#374151' }}>
-                        {new Date(currentYear, currentMonth).toLocaleDateString('sr-RS', { 
-                          month: 'long', 
-                          year: 'numeric' 
-                        })}
-                      </h4>
+                      <button 
+                        onClick={goToPreviousMonth}
+                        style={{
+                          background: '#f3f4f6',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          color: '#374151'
+                        }}
+                      >
+                        ← Prethodni
+                      </button>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0, fontSize: 16, color: '#374151' }}>
+                          {new Date(currentCalendarYear, currentCalendarMonth).toLocaleDateString('sr-RS', { 
+                            month: 'long', 
+                            year: 'numeric' 
+                          })}
+                        </h4>
+                        {(currentCalendarMonth !== currentMonth || currentCalendarYear !== currentYear) && (
+                          <button 
+                            onClick={goToCurrentMonth}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: '#3b82f6',
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              marginTop: 4
+                            }}
+                          >
+                            Danas
+                          </button>
+                        )}
+                      </div>
+                      
+                      <button 
+                        onClick={goToNextMonth}
+                        style={{
+                          background: '#f3f4f6',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          color: '#374151'
+                        }}
+                      >
+                        Sledeći →
+                      </button>
                     </div>
 
                     {/* Dani u nedelji */}
@@ -848,7 +916,7 @@ export default function NewsroomTracker() {
                       gap: 1 
                     }}>
                       {/* Prazni dani na početku */}
-                      {Array.from({ length: getFirstDayOfMonth(currentMonth, currentYear) }, (_, i) => (
+                      {Array.from({ length: getFirstDayOfMonth(currentCalendarMonth, currentCalendarYear) }, (_, i) => (
                         <div key={`empty-${i}`} style={{ 
                           minHeight: '50px', 
                           background: '#f9fafb' 
@@ -856,9 +924,9 @@ export default function NewsroomTracker() {
                       ))}
                       
                       {/* Dani u mesecu */}
-                      {Array.from({ length: getDaysInMonth(currentMonth, currentYear) }, (_, i) => {
+                      {Array.from({ length: getDaysInMonth(currentCalendarMonth, currentCalendarYear) }, (_, i) => {
                         const day = i + 1
-                        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                        const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                         const dayEvents = getEventsForDate(dateStr)
                         const isToday = dateStr === todayISO
                         const isSelected = dateStr === selectedDate
