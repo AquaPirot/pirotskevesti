@@ -688,10 +688,20 @@ export default function NewsroomTracker() {
               {/* Lista */}
               <Card>
                 <div style={{ padding: 24 }}>
-                  <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Kalendar događaja</h2>
+                  <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Predstojeći događaji</h2>
                   <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
-                    {events.length
-                      ? events.map(e => (
+                    {events.filter(e => {
+                      const eventDate = new Date(e.date);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0); // Resetuj vreme na početak dana
+                      return eventDate >= today; // Prikaži samo današnje i buduće događaje
+                    }).length
+                      ? events.filter(e => {
+                          const eventDate = new Date(e.date);
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          return eventDate >= today;
+                        }).map(e => (
                           <div key={e.id} style={{ 
                             border: '1px solid #e5e7eb', 
                             borderRadius: 8, 
@@ -758,7 +768,7 @@ export default function NewsroomTracker() {
                             )}
                           </div>
                         ))
-                      : <p style={{ textAlign: 'center', color: '#6b7280', padding: '32px 0' }}>Nema događaja</p>}
+                      : <p style={{ textAlign: 'center', color: '#6b7280', padding: '32px 0' }}>Nema predstojećih događaja</p>}
                   </div>
                 </div>
               </Card>
