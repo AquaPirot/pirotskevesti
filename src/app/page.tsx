@@ -232,7 +232,11 @@ export default function NewsroomTracker() {
   const currentYear = currentDate.getFullYear()
   
   const getDaysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate()
-  const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay()
+  const getFirstDayOfMonth = (month: number, year: number) => {
+    const firstDay = new Date(year, month, 1).getDay()
+    // Pretvori iz US formata (nedelja=0) u evropski format (ponedeljak=0)
+    return firstDay === 0 ? 6 : firstDay - 1
+  }
   
   const getEventsForDate = (dateStr: string) => {
     return events.filter(e => {
@@ -909,7 +913,7 @@ export default function NewsroomTracker() {
                       gap: 1, 
                       marginBottom: 8 
                     }}>
-                      {['Ned', 'Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub'].map(day => (
+                      {['Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub', 'Ned'].map(day => (
                         <div key={day} style={{ 
                           padding: '8px 4px', 
                           textAlign: 'center', 
