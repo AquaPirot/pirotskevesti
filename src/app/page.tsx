@@ -528,7 +528,11 @@ export default function NewsroomTracker() {
                             }}>{getPrio(e.priority)}</span>
                           </div>
                           <small style={{ color: '#6b7280', display: 'block', margin: '4px 0' }}>
-                            📅 {new Date(e.date).toLocaleDateString('sr-RS')}{e.time && ` u ${e.time}`}
+                            📅 {new Date(e.date).toLocaleDateString('sr-RS', { 
+                              weekday: 'long', 
+                              day: 'numeric', 
+                              month: 'long' 
+                            })}{e.time && ` u ${e.time}`}
                           </small>
                           <div style={{ color: '#3b82f6', fontSize: 14 }}>👤 {e.user.name}</div>
                           {e.notes && (
@@ -726,7 +730,11 @@ export default function NewsroomTracker() {
                             </button>
                             <strong style={{ display: 'block', marginBottom: 8, wordBreak: 'break-word' }}>{e.title}</strong>
                             <div style={{ fontSize: 12, color: '#6b7280', margin: '4px 0' }}>
-                              📅 {new Date(e.date).toLocaleDateString('sr-RS')}{e.time && ` u ${e.time}`}
+                              📅 {new Date(e.date).toLocaleDateString('sr-RS', { 
+                                weekday: 'long', 
+                                day: 'numeric', 
+                                month: 'long' 
+                              })}{e.time && ` u ${e.time}`}
                             </div>
                             <div style={{ fontSize: 12, color: '#3b82f6', marginBottom: 8 }}>👤 {e.user.name}</div>
                             <span style={{
