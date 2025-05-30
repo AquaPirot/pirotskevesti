@@ -206,9 +206,20 @@ export default function NewsroomTracker() {
   const todaysTasks = tasks.filter(t => new Date(t.date).toISOString().split('T')[0] === todayISO)
   const upcomingEvents = events
     .filter(e => {
-      const d = new Date(e.date); const now = new Date(); const next7 = new Date(); next7.setDate(next7.getDate() + 7)
-      return d >= now && d <= next7
-    }).slice(0, 5)
+      const eventDate = new Date(e.date)
+      const today = new Date()
+      const next7Days = new Date()
+      next7Days.setDate(today.getDate() + 7)
+      
+      // Poređuj samo datume bez vremena
+      const eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate())
+      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      const next7DaysOnly = new Date(next7Days.getFullYear(), next7Days.getMonth(), next7Days.getDate())
+      
+      return eventDateOnly >= todayOnly && eventDateOnly <= next7DaysOnly
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()) // Sortiraj po datumu
+    .slice(0, 5)
   const getCat = (v: string) => categories.find(c => c.value === v)?.label || v
   const getStat = (v: string) => statuses.find(s => s.value === v)?.label || v
   const getPrio = (v: string) => priorities.find(p => p.value === v)?.label || v
