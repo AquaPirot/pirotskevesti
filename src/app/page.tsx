@@ -700,140 +700,41 @@ export default function NewsroomTracker() {
                 </div>
               </Card>
 
-              {/* Lista - sada sa mesečnim kalendarom */}
+              {/* Lista - kombinacija sedmičnog i mesečnog prikaza */}
               <Card>
                 <div style={{ padding: 24 }}>
-                  <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Mesečni kalendar</h2>
+                  <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Kalendar događaja</h2>
                   
-                  {/* Header kalendara */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    marginBottom: 16 
-                  }}>
-                    <h3 style={{ margin: 0, fontSize: 18 }}>
-                      {new Date(currentYear, currentMonth).toLocaleDateString('sr-RS', { 
-                        month: 'long', 
-                        year: 'numeric' 
-                      })}
+                  {/* Sedmični pregled - predstojeći događaji */}
+                  <div style={{ marginBottom: 32 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#374151' }}>
+                      Predstojeći događaji (narednih 7 dana)
                     </h3>
-                  </div>
-
-                  {/* Dani u nedelji */}
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(7, 1fr)', 
-                    gap: 1, 
-                    marginBottom: 8 
-                  }}>
-                    {['Ned', 'Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub'].map(day => (
-                      <div key={day} style={{ 
-                        padding: '8px 4px', 
-                        textAlign: 'center', 
-                        fontWeight: 600, 
-                        fontSize: 12,
-                        background: '#f3f4f6',
-                        color: '#374151'
-                      }}>
-                        {day}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Kalendar grid */}
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(7, 1fr)', 
-                    gap: 1 
-                  }}>
-                    {/* Prazni dani na početku */}
-                    {Array.from({ length: getFirstDayOfMonth(currentMonth, currentYear) }, (_, i) => (
-                      <div key={`empty-${i}`} style={{ 
-                        minHeight: '50px', 
-                        background: '#f9fafb' 
-                      }} />
-                    ))}
-                    
-                    {/* Dani u mesecu */}
-                    {Array.from({ length: getDaysInMonth(currentMonth, currentYear) }, (_, i) => {
-                      const day = i + 1
-                      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                      const dayEvents = getEventsForDate(dateStr)
-                      const isToday = dateStr === todayISO
-                      const isSelected = dateStr === selectedDate
-                      
-                      return (
-                        <button
-                          key={day}
-                          onClick={() => setSelectedDate(dateStr)}
-                          style={{
-                            minHeight: '50px',
-                            padding: '4px',
-                            border: 'none',
-                            background: isSelected ? '#dbeafe' : isToday ? '#f0f9ff' : 'white',
-                            cursor: 'pointer',
-                            position: 'relative',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'flex-start',
-                            fontSize: 14,
-                            borderRadius: 4
-                          }}
-                        >
-                          <span style={{ 
-                            fontWeight: isToday ? 600 : 400,
-                            color: isToday ? '#1d4ed8' : '#374151'
-                          }}>
-                            {day}
-                          </span>
-                          {dayEvents.length > 0 && (
-                            <div style={{
-                              background: '#ef4444',
-                              color: 'white',
-                              borderRadius: '50%',
-                              width: '16px',
-                              height: '16px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: 10,
-                              fontWeight: 600,
-                              marginTop: '2px'
-                            }}>
-                              {dayEvents.length}
-                            </div>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {/* Detalji za selektovani dan */}
-                  {selectedDate && (
-                    <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid #e5e7eb' }}>
-                      <h4 style={{ 
-                        margin: '0 0 16px 0', 
-                        fontSize: 16,
-                        color: '#374151'
-                      }}>
-                        Događaji za {new Date(selectedDate).toLocaleDateString('sr-RS', { 
-                          weekday: 'long', 
-                          day: 'numeric', 
-                          month: 'long' 
-                        })}
-                      </h4>
-                      
-                      {selectedDateEvents.length > 0 ? (
-                        selectedDateEvents.map(e => (
+                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      {events.filter(e => {
+                        const eventDate = new Date(e.date);
+                        const today = new Date();
+                        const next7 = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        next7.setDate(next7.getDate() + 7);
+                        return eventDate >= today && eventDate <= next7;
+                      }).length > 0 ? (
+                        events.filter(e => {
+                          const eventDate = new Date(e.date);
+                          const today = new Date();
+                          const next7 = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          next7.setDate(next7.getDate() + 7);
+                          return eventDate >= today && eventDate <= next7;
+                        }).map(e => (
                           <div key={e.id} style={{ 
                             border: '1px solid #e5e7eb', 
                             borderRadius: 8, 
-                            padding: 12, 
+                            padding: 16, 
+                            position: 'relative', 
                             marginBottom: 12,
-                            position: 'relative',
-                            paddingRight: 40
+                            paddingRight: 40,
+                            borderLeft: '4px solid #3b82f6'
                           }}>
                             <button onClick={() => delEvent(e.id)} disabled={loading}
                               style={{ 
@@ -843,43 +744,235 @@ export default function NewsroomTracker() {
                                 background: '#ef4444',
                                 border: 'none', 
                                 borderRadius: 4, 
-                                padding: 4, 
+                                padding: 6, 
                                 color: 'white', 
-                                cursor: 'pointer',
-                                width: 24,
-                                height: 24,
+                                cursor: 'pointer', 
+                                opacity: .8,
+                                width: 28,
+                                height: 28,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
                               }}
                             >
-                              <Trash2 size={12} />
+                              <Trash2 size={14} />
                             </button>
-                            <strong style={{ display: 'block', marginBottom: 4 }}>{e.title}</strong>
-                            {e.time && (
-                              <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
-                                🕐 {e.time}
-                              </div>
-                            )}
-                            <div style={{ fontSize: 12, color: '#3b82f6' }}>👤 {e.user.name}</div>
+                            <strong style={{ display: 'block', marginBottom: 8 }}>{e.title}</strong>
+                            <div style={{ fontSize: 12, color: '#6b7280', margin: '4px 0' }}>
+                              📅 {new Date(e.date).toLocaleDateString('sr-RS', { 
+                                weekday: 'long', 
+                                day: 'numeric', 
+                                month: 'long' 
+                              })}{e.time && ` u ${e.time}`}
+                            </div>
+                            <div style={{ fontSize: 12, color: '#3b82f6', marginBottom: 8 }}>👤 {e.user.name}</div>
+                            <span style={{
+                              fontSize: 11, padding: '2px 6px', borderRadius: 4, marginBottom: 8, display: 'inline-block',
+                              background: e.priority === 'HIGH' ? '#fecaca'
+                                       : e.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
+                              color: e.priority === 'HIGH' ? '#991b1b'
+                                   : e.priority === 'MEDIUM' ? '#d97706' : '#166534'
+                            }}>{getPrio(e.priority)}</span>
                             {e.notes && (
                               <p style={{ 
-                                fontSize: 12, 
+                                fontSize: 14, 
                                 background: '#f9fafb', 
-                                padding: 6, 
+                                padding: 8, 
                                 borderRadius: 4,
                                 marginTop: 8,
-                                color: '#6b7280',
-                                margin: '8px 0 0 0'
+                                color: '#6b7280'
                               }}>{e.notes}</p>
                             )}
                           </div>
                         ))
                       ) : (
-                        <p style={{ color: '#6b7280', fontSize: 14 }}>Nema događaja za ovaj dan</p>
+                        <p style={{ color: '#6b7280', fontSize: 14 }}>Nema predstojećih događaja u narednih 7 dana</p>
                       )}
                     </div>
-                  )}
+                  </div>
+
+                  {/* Mesečni kalendar */}
+                  <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 24 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#374151' }}>
+                      Mesečni pregled
+                    </h3>
+                    
+                    {/* Header kalendara */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      marginBottom: 16 
+                    }}>
+                      <h4 style={{ margin: 0, fontSize: 16, color: '#374151' }}>
+                        {new Date(currentYear, currentMonth).toLocaleDateString('sr-RS', { 
+                          month: 'long', 
+                          year: 'numeric' 
+                        })}
+                      </h4>
+                    </div>
+
+                    {/* Dani u nedelji */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(7, 1fr)', 
+                      gap: 1, 
+                      marginBottom: 8 
+                    }}>
+                      {['Ned', 'Pon', 'Uto', 'Sre', 'Čet', 'Pet', 'Sub'].map(day => (
+                        <div key={day} style={{ 
+                          padding: '8px 4px', 
+                          textAlign: 'center', 
+                          fontWeight: 600, 
+                          fontSize: 12,
+                          background: '#f3f4f6',
+                          color: '#374151'
+                        }}>
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Kalendar grid */}
+                    <div style={{ 
+                      display: 'grid', 
+                      gridTemplateColumns: 'repeat(7, 1fr)', 
+                      gap: 1 
+                    }}>
+                      {/* Prazni dani na početku */}
+                      {Array.from({ length: getFirstDayOfMonth(currentMonth, currentYear) }, (_, i) => (
+                        <div key={`empty-${i}`} style={{ 
+                          minHeight: '50px', 
+                          background: '#f9fafb' 
+                        }} />
+                      ))}
+                      
+                      {/* Dani u mesecu */}
+                      {Array.from({ length: getDaysInMonth(currentMonth, currentYear) }, (_, i) => {
+                        const day = i + 1
+                        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                        const dayEvents = getEventsForDate(dateStr)
+                        const isToday = dateStr === todayISO
+                        const isSelected = dateStr === selectedDate
+                        
+                        return (
+                          <button
+                            key={day}
+                            onClick={() => setSelectedDate(dateStr)}
+                            style={{
+                              minHeight: '50px',
+                              padding: '4px',
+                              border: 'none',
+                              background: isSelected ? '#dbeafe' : isToday ? '#f0f9ff' : 'white',
+                              cursor: 'pointer',
+                              position: 'relative',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'flex-start',
+                              fontSize: 14,
+                              borderRadius: 4
+                            }}
+                          >
+                            <span style={{ 
+                              fontWeight: isToday ? 600 : 400,
+                              color: isToday ? '#1d4ed8' : '#374151'
+                            }}>
+                              {day}
+                            </span>
+                            {dayEvents.length > 0 && (
+                              <div style={{
+                                background: '#ef4444',
+                                color: 'white',
+                                borderRadius: '50%',
+                                width: '16px',
+                                height: '16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 10,
+                                fontWeight: 600,
+                                marginTop: '2px'
+                              }}>
+                                {dayEvents.length}
+                              </div>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Detalji za selektovani dan */}
+                    {selectedDate && (
+                      <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid #e5e7eb' }}>
+                        <h4 style={{ 
+                          margin: '0 0 16px 0', 
+                          fontSize: 16,
+                          color: '#374151'
+                        }}>
+                          Događaji za {new Date(selectedDate).toLocaleDateString('sr-RS', { 
+                            weekday: 'long', 
+                            day: 'numeric', 
+                            month: 'long' 
+                          })}
+                        </h4>
+                        
+                        {selectedDateEvents.length > 0 ? (
+                          selectedDateEvents.map(e => (
+                            <div key={e.id} style={{ 
+                              border: '1px solid #e5e7eb', 
+                              borderRadius: 8, 
+                              padding: 12, 
+                              marginBottom: 12,
+                              position: 'relative',
+                              paddingRight: 40
+                            }}>
+                              <button onClick={() => delEvent(e.id)} disabled={loading}
+                                style={{ 
+                                  position: 'absolute', 
+                                  top: 8, 
+                                  right: 8, 
+                                  background: '#ef4444',
+                                  border: 'none', 
+                                  borderRadius: 4, 
+                                  padding: 4, 
+                                  color: 'white', 
+                                  cursor: 'pointer',
+                                  width: 24,
+                                  height: 24,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                              <strong style={{ display: 'block', marginBottom: 4 }}>{e.title}</strong>
+                              {e.time && (
+                                <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
+                                  🕐 {e.time}
+                                </div>
+                              )}
+                              <div style={{ fontSize: 12, color: '#3b82f6' }}>👤 {e.user.name}</div>
+                              {e.notes && (
+                                <p style={{ 
+                                  fontSize: 12, 
+                                  background: '#f9fafb', 
+                                  padding: 6, 
+                                  borderRadius: 4,
+                                  marginTop: 8,
+                                  color: '#6b7280',
+                                  margin: '8px 0 0 0'
+                                }}>{e.notes}</p>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <p style={{ color: '#6b7280', fontSize: 14 }}>Nema događaja za ovaj dan</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </Card>
             </div>
