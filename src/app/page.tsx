@@ -207,8 +207,12 @@ export default function NewsroomTracker() {
   const todaysTasks = tasks.filter(t => new Date(t.date).toISOString().split('T')[0] === todayISO)
   const upcomingEvents = events
     .filter(e => {
-      const d = new Date(e.date); const now = new Date(); const next7 = new Date(); next7.setDate(next7.getDate() + 7)
-      return d >= now && d <= next7
+      const d = new Date(e.date); 
+      const now = new Date(); 
+      const next7 = new Date(); 
+      now.setHours(0, 0, 0, 0); // Resetuj na početak dana
+      next7.setDate(next7.getDate() + 7)
+      return d >= now && d <= next7 // Uključuje i današnje događaje
     }).slice(0, 5)
   const getCat = (v: string) => categories.find(c => c.value === v)?.label || v
   const getStat = (v: string) => statuses.find(s => s.value === v)?.label || v
@@ -223,7 +227,11 @@ export default function NewsroomTracker() {
   const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay()
   
   const getEventsForDate = (dateStr: string) => {
-    return events.filter(e => e.date === dateStr)
+    return events.filter(e => {
+      // Normalizuj datume za poređenje
+      const eventDate = new Date(e.date).toISOString().split('T')[0]
+      return eventDate === dateStr
+    })
   }
   
   const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : []
