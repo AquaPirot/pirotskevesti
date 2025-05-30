@@ -235,7 +235,11 @@ export default function NewsroomTracker() {
   const getFirstDayOfMonth = (month: number, year: number) => new Date(year, month, 1).getDay()
   
   const getEventsForDate = (dateStr: string) => {
-    return events.filter(e => e.date === dateStr)
+    return events.filter(e => {
+      // Normalizuj oba datuma u YYYY-MM-DD format
+      const eventDate = new Date(e.date).toISOString().split('T')[0]
+      return eventDate === dateStr
+    })
   }
   
   const selectedDateEvents = selectedDate ? getEventsForDate(selectedDate) : []
