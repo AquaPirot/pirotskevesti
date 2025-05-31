@@ -784,90 +784,76 @@ export default function NewsroomTracker() {
                   <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24 }}>Kalendar događaja</h2>
                   
                   {/* Sedmični pregled - predstojeći događaji */}
-                  <div style={{ marginBottom: 32 }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#374151' }}>
-                      Predstojeći događaji
-                    </h3>
-                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                      {events.filter(e => {
-                        const eventDate = new Date(e.date);
-                        const today = new Date();
-                        const next7 = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        next7.setDate(next7.getDate() + 7);
-                        return eventDate >= today && eventDate <= next7;
-                      }).length > 0 ? (
-                        events.filter(e => {
-                          const eventDate = new Date(e.date);
-                          const today = new Date();
-                          const next7 = new Date();
-                          today.setHours(0, 0, 0, 0);
-                          next7.setDate(next7.getDate() + 7);
-                          return eventDate >= today && eventDate <= next7;
-                        }).map(e => (
-                          <div key={e.id} style={{ 
-                            border: '1px solid #e5e7eb', 
-                            borderRadius: 8, 
-                            padding: 16, 
-                            position: 'relative', 
-                            marginBottom: 12,
-                            paddingRight: 40,
-                            borderLeft: '4px solid #3b82f6'
-                          }}>
-                            <button onClick={() => delEvent(e.id)} disabled={loading}
-                              style={{ 
-                                position: 'absolute', 
-                                top: 8, 
-                                right: 8, 
-                                background: '#ef4444',
-                                border: 'none', 
-                                borderRadius: 4, 
-                                padding: 6, 
-                                color: 'white', 
-                                cursor: 'pointer', 
-                                opacity: .8,
-                                width: 28,
-                                height: 28,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                            <strong style={{ display: 'block', marginBottom: 8 }}>{e.title}</strong>
-                            <div style={{ fontSize: 12, color: '#6b7280', margin: '4px 0' }}>
-                              📅 {new Date(e.date).toLocaleDateString('sr-RS', { 
-                                weekday: 'long', 
-                                day: 'numeric', 
-                                month: 'long' 
-                              })}{e.time && ` u ${e.time}`}
-                            </div>
-                            <div style={{ fontSize: 12, color: '#3b82f6', marginBottom: 8 }}>👤 {e.user.name}</div>
-                            <span style={{
-                              fontSize: 11, padding: '2px 6px', borderRadius: 4, marginBottom: 8, display: 'inline-block',
-                              background: e.priority === 'HIGH' ? '#fecaca'
-                                       : e.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
-                              color: e.priority === 'HIGH' ? '#991b1b'
-                                   : e.priority === 'MEDIUM' ? '#d97706' : '#166534'
-                            }}>{getPrio(e.priority)}</span>
-                            {e.notes && (
-                              <p style={{ 
-                                fontSize: 14, 
-                                background: '#f9fafb', 
-                                padding: 8, 
-                                borderRadius: 4,
-                                marginTop: 8,
-                                color: '#6b7280'
-                              }}>{e.notes}</p>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <p style={{ color: '#6b7280', fontSize: 14 }}>Nema predstojećih događaja u narednih 7 dana</p>
-                      )}
-                    </div>
-                  </div>
+<div style={{ marginBottom: 32 }}>
+  <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#374151' }}>
+    Predstojeći događaji
+  </h3>
+  <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+    {getUpcomingEvents().length > 0 ? (
+      getUpcomingEvents().map(e => (
+        <div key={e.id} style={{ 
+          border: '1px solid #e5e7eb', 
+          borderRadius: 8, 
+          padding: 16, 
+          position: 'relative', 
+          marginBottom: 12,
+          paddingRight: 40,
+          borderLeft: '4px solid #3b82f6'
+        }}>
+          <button onClick={() => delEvent(e.id)} disabled={loading}
+            style={{ 
+              position: 'absolute', 
+              top: 8, 
+              right: 8, 
+              background: '#ef4444',
+              border: 'none', 
+              borderRadius: 4, 
+              padding: 6, 
+              color: 'white', 
+              cursor: 'pointer', 
+              opacity: .8,
+              width: 28,
+              height: 28,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Trash2 size={14} />
+          </button>
+          <strong style={{ display: 'block', marginBottom: 8 }}>{e.title}</strong>
+          <div style={{ fontSize: 12, color: '#6b7280', margin: '4px 0' }}>
+            📅 {new Date(e.date).toLocaleDateString('sr-RS', { 
+              weekday: 'long', 
+              day: 'numeric', 
+              month: 'long' 
+            })}{e.time && ` u ${e.time}`}
+          </div>
+          <div style={{ fontSize: 12, color: '#3b82f6', marginBottom: 8 }}>👤 {e.user.name}</div>
+          <span style={{
+            fontSize: 11, padding: '2px 6px', borderRadius: 4, marginBottom: 8, display: 'inline-block',
+            background: e.priority === 'HIGH' ? '#fecaca'
+                     : e.priority === 'MEDIUM' ? '#fef3c7' : '#dcfce7',
+            color: e.priority === 'HIGH' ? '#991b1b'
+                 : e.priority === 'MEDIUM' ? '#d97706' : '#166534'
+          }}>{getPrio(e.priority)}</span>
+          {e.notes && (
+            <p style={{ 
+              fontSize: 14, 
+              background: '#f9fafb', 
+              padding: 8, 
+              borderRadius: 4,
+              marginTop: 8,
+              color: '#6b7280'
+            }}>{e.notes}</p>
+          )}
+        </div>
+      ))
+    ) : (
+      <p style={{ color: '#6b7280', fontSize: 14 }}>Nema predstojećih događaja</p>
+    )}
+  </div>
+</div>
 
                   {/* Mesečni kalendar */}
                   <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 24 }}>
