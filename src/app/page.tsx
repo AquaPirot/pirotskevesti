@@ -210,15 +210,46 @@ export default function NewsroomTracker() {
   
   // Dinamički računaj predstojeće događaje
   const getUpcomingEvents = () => {
-    const today = new Date()
-    const next7 = new Date()
-    today.setHours(0, 0, 0, 0)
-    next7.setDate(next7.getDate() + 7)
-    next7.setHours(23, 59, 59, 999)
+    const now = new Date() // Trenutno vreme u Srbiji
     
     return events.filter(e => {
       const eventDate = new Date(e.date)
-      return eventDate >= today && eventDate <= next7
+      
+      if (e.time) {
+        // Ako ima vreme, kombinuj datum i vreme
+        const [hours, minutes] = e.time.split(':').map(Number)
+        eventDate.setHours(hours, minutes, 0, 0)
+        
+        // Prikaži samo buduće događaje (uključujući današnje koji još nisu prošli)
+        return eventDate > now
+      } else {
+        // Ako nema vreme, prikaži ceo dan ako je danas ili u budućnosti
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        eventDate.setHours(0, 0, 0, 0)
+        
+        return eventDate >= today
+      }
+    }).sort((a, b) => {
+      // Sortiraj po datumu i vremenu
+      const dateA = new Date(a.date)
+      const dateB = new Date(b.date)
+      
+      if (a.time) {
+        const [hoursA, minutesA] = a.time.split(':').map(Number)
+        dateA.setHours(hoursA, minutesA, 0, 0)
+      } else {
+        dateA.setHours(0, 0, 0, 0)
+      }
+      
+      if (b.time) {
+        const [hoursB, minutesB] = b.time.split(':').map(Number)
+        dateB.setHours(hoursB, minutesB, 0, 0)
+      } else {
+        dateB.setHours(0, 0, 0, 0)
+      }
+      
+      return dateA.getTime() - dateB.getTime()
     }).slice(0, 5)
   }
   
