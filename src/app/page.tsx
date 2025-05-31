@@ -786,7 +786,7 @@ export default function NewsroomTracker() {
                   {/* Sedmični pregled - predstojeći događaji */}
                   <div style={{ marginBottom: 32 }}>
                     <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#374151' }}>
-                      Predstojeći događaji (narednih 7 dana)
+                      Predstojeći događaji
                     </h3>
                     <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                       {events.filter(e => {
